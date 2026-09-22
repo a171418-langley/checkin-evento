@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Check-in</title>
+
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      text-align: center;
+    }
+
+    .contenedor {
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #estado {
+      margin: 15px 0;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 500px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    #resultado {
+      margin-top: 20px;
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="contenedor">
+
+    <h1>Check-in</h1>
+
+    <div id="estado">
+      Iniciando cámara...
+    </div>
+
+    <div id="reader"></div>
+
+    <div id="resultado">
+      Esperando código QR...
+    </div>
+
+  </div>
+
+  <script>
+
+    const params = new URLSearchParams(window.location.search);
+    const idEvento = params.get("evento") || "";
+
+    const estado = document.getElementById("estado");
+    const resultado = document.getElementById("resultado");
+
+    let procesando = false;
+
+    function qrDetectado(codigoQR) {
+
+      if (procesando) return;
+
+      procesando = true;
+
+      resultado.innerHTML =
+        "QR detectado:<br><strong>" +
+        codigoQR +
+        "</strong>";
+
+      /*
+       * AQUÍ CONECTAREMOS DESPUÉS
+       * CON GOOGLE APPS SCRIPT.
+       */
+
+      setTimeout(() => {
+        procesando = false;
+      }, 2000);
+    }
+
+    function errorQR(errorMessage) {
+      // No mostramos errores de lectura continuamente.
+    }
+
+    const lector = new Html5Qrcode("reader");
+
+    lector.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: {
+          width: 250,
+          height: 250
+        }
+      },
+      qrDetectado,
+      errorQR
+    )
+    .then(() => {
+      estado.textContent = "📷 Cámara activa — escanea un QR";
+    })
+    .catch(error => {
+      console.error(error);
+
+      estado.textContent =
+        "❌ No se pudo iniciar la cámara.";
+
+      resultado.textContent =
+        "Verifica los permisos de cámara del navegador.";
+    });
+
+  </script>
+
+</body>
+</html>
