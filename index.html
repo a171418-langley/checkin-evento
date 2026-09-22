@@ -79,26 +79,51 @@
 
     let procesando = false;
 
-    function qrDetectado(codigoQR) {
+    async function qrDetectado(codigoQR) {
 
-      if (procesando) return;
+  if (procesando) return;
 
-      procesando = true;
+  procesando = true;
 
-      resultado.innerHTML =
-        "QR detectado:<br><strong>" +
-        codigoQR +
-        "</strong>";
+  resultado.innerHTML =
+    "⏳ Procesando QR...";
 
-      /*
-       * AQUÍ CONECTAREMOS DESPUÉS
-       * CON GOOGLE APPS SCRIPT.
-       */
+  try {
 
-      setTimeout(() => {
-        procesando = false;
-      }, 2000);
-    }
+    const respuesta = await fetch(
+      "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KpaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: JSON.stringify({
+          codigoQR: codigoQR,
+          idEvento: idEvento
+        })
+      }
+    );
+
+    const datos = await respuesta.json();
+
+    resultado.innerHTML =
+      datos.ok
+        ? "✅ " + datos.mensaje
+        : "❌ " + datos.mensaje;
+
+  } catch (error) {
+
+    console.error(error);
+
+    resultado.innerHTML =
+      "❌ Error al comunicarse con el sistema.";
+
+  }
+
+  setTimeout(() => {
+    procesando = false;
+  }, 2500);
+}
 
     function errorQR(errorMessage) {
       // No mostramos errores de lectura continuamente.
