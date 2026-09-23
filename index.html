@@ -79,50 +79,54 @@
 
     let procesando = false;
 
-    async function qrDetectado(codigoQR) {
+    function qrDetectado(codigoQR) {
 
   if (procesando) return;
 
   procesando = true;
 
-  resultado.innerHTML =
-    "⏳ Procesando QR...";
+  resultado.innerHTML = "⏳ Procesando QR...";
 
-  try {
+  const callbackName =
+    "respuestaCheckin_" + Date.now();
 
-    const respuesta = await fetch(
-      "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KpaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain"
-        },
-        body: JSON.stringify({
-          codigoQR: codigoQR,
-          idEvento: idEvento
-        })
-      }
-    );
+  window[callbackName] = function(datos) {
 
-    const datos = await respuesta.json();
+    if (datos.ok) {
+      resultado.innerHTML =
+        "✅ " + datos.mensaje;
+    } else {
+      resultado.innerHTML =
+        "❌ " + datos.mensaje;
+    }
 
-    resultado.innerHTML =
-      datos.ok
-        ? "✅ " + datos.mensaje
-        : "❌ " + datos.mensaje;
+    delete window[callbackName];
 
-  } catch (error) {
+    setTimeout(() => {
+      procesando = false;
+    }, 2500);
+  };
 
-    console.error(error);
+  const script = document.createElement("script");
+
+  script.src =
+    "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KpaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec" +
+    "?accion=checkin" +
+    "&codigoQR=" + encodeURIComponent(codigoQR) +
+    "&idEvento=" + encodeURIComponent(idEvento) +
+    "&callback=" + callbackName;
+
+  script.onerror = function() {
 
     resultado.innerHTML =
       "❌ Error al comunicarse con el sistema.";
 
-  }
+    delete window[callbackName];
 
-  setTimeout(() => {
     procesando = false;
-  }, 2500);
+  };
+
+  document.body.appendChild(script);
 }
 
     function errorQR(errorMessage) {
