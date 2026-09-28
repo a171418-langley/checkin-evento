@@ -319,28 +319,16 @@
 
 
         contenedor.innerHTML =
-          "<strong>" +
-          evento.nombre +
-          "</strong><br>" +
+  "<strong>" +
+  evento.nombre +
+  "</strong><br><br>" +
 
-          "ID: " +
-          evento.id +
-          "<br>" +
+  "Finaliza el: " +
+  evento.fechaFin +
+  "<br>" +
 
-          "Inicio: " +
-          evento.fechaInicio +
-          " " +
-          evento.horaInicio +
-          "<br>" +
-
-          "Fin: " +
-          evento.fechaFin +
-          " " +
-          evento.horaFin +
-          "<br>" +
-
-          "Estado: " +
-          evento.estado;
+  "Hora de finalización: " +
+  evento.horaFin;
       }
     );
   }
@@ -388,6 +376,15 @@
       return;
     }
 
+    const confirmar =
+  confirm(
+    "¿Estás seguro/a de que deseas crear este evento?\n\n" +
+    "Una vez creado, la información no podrá revertirse."
+  );
+
+if (!confirmar) {
+  return;
+}
 
     const btn =
       document.getElementById("btnCrear");
@@ -459,6 +456,11 @@
 
 
         cargarEventoActual();
+
+        setInterval(
+          cargarEventoActual,
+          30000
+        );
 
       }
     );
