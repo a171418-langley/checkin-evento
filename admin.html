@@ -1,0 +1,478 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Administración de eventos</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #222;
+    }
+
+    .contenedor {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .tarjeta {
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    }
+
+    .tarjeta h2 {
+      margin-top: 0;
+      font-size: 20px;
+    }
+
+    .campo {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 7px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: #222;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    button:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+
+    #estado {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      display: none;
+      text-align: center;
+    }
+
+    .info {
+      line-height: 1.7;
+    }
+
+    .sin-evento {
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="contenedor">
+
+    <h1>Administración de eventos</h1>
+
+    <!-- EVENTO ACTUAL -->
+    <div class="tarjeta">
+
+      <h2>Evento actual</h2>
+
+      <div id="eventoActual" class="info">
+        Cargando información...
+      </div>
+
+    </div>
+
+
+    <!-- CREAR EVENTO -->
+    <div class="tarjeta">
+
+      <h2>Crear nuevo evento</h2>
+
+      <div class="campo">
+        <label for="nombreEvento">
+          Nombre del evento
+        </label>
+
+        <input
+          type="text"
+          id="nombreEvento"
+          placeholder="Ej. Evento de graduación"
+        >
+      </div>
+
+
+      <div class="campo">
+        <label for="fechaInicio">
+          Fecha de inicio
+        </label>
+
+        <input
+          type="date"
+          id="fechaInicio"
+        >
+      </div>
+
+
+      <div class="campo">
+        <label for="fechaFin">
+          Fecha de finalización
+        </label>
+
+        <input
+          type="date"
+          id="fechaFin"
+        >
+      </div>
+
+
+      <div class="campo">
+        <label for="horaInicio">
+          Hora de inicio
+        </label>
+
+        <input
+          type="time"
+          id="horaInicio"
+        >
+      </div>
+
+
+      <div class="campo">
+        <label for="horaFin">
+          Hora de finalización
+        </label>
+
+        <input
+          type="time"
+          id="horaFin"
+        >
+      </div>
+
+
+      <button
+        id="btnCrear"
+        onclick="crearEvento()"
+      >
+        Crear evento
+      </button>
+
+      <div id="estado"></div>
+
+    </div>
+
+  </div>
+
+
+<script>
+
+  const URL_APPS_SCRIPT =
+    "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KmaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec";
+
+
+  /*
+   * Comunicación con Apps Script mediante JSONP
+   */
+  function llamarBackend(parametros, callback) {
+
+    const nombreCallback =
+      "respuesta_" + Date.now();
+
+    window[nombreCallback] = function(datos) {
+
+      callback(datos);
+
+      delete window[nombreCallback];
+      script.remove();
+
+    };
+
+
+    const query = new URLSearchParams();
+
+    for (const clave in parametros) {
+      query.append(clave, parametros[clave]);
+    }
+
+    query.append("callback", nombreCallback);
+
+
+    const script =
+      document.createElement("script");
+
+    script.src =
+      URL_APPS_SCRIPT +
+      "?" +
+      query.toString();
+
+
+    script.onerror = function() {
+
+      callback({
+        ok: false,
+        mensaje:
+          "No se pudo comunicar con el servidor."
+      });
+
+      delete window[nombreCallback];
+      script.remove();
+
+    };
+
+
+    document.body.appendChild(script);
+  }
+
+
+  /*
+   * Mostrar estado
+   */
+  function mostrarEstado(mensaje, error = false) {
+
+    const elemento =
+      document.getElementById("estado");
+
+    elemento.style.display = "block";
+
+    elemento.textContent = mensaje;
+
+    elemento.style.background =
+      error ? "#f8d7da" : "#d4edda";
+
+    elemento.style.color =
+      error ? "#721c24" : "#155724";
+  }
+
+
+  /*
+   * Obtener evento actual
+   */
+  function cargarEventoActual() {
+
+    llamarBackend(
+      {
+        accion: "obtenerEventoActivo"
+      },
+
+      function(datos) {
+
+        const contenedor =
+          document.getElementById("eventoActual");
+
+
+        if (!datos.ok) {
+
+          contenedor.innerHTML =
+            "<span class='sin-evento'>" +
+            "Error al consultar el evento." +
+            "</span>";
+
+          return;
+        }
+
+
+        if (!datos.evento) {
+
+          contenedor.innerHTML =
+            "<span class='sin-evento'>" +
+            "No hay ningún evento vigente." +
+            "</span>";
+
+          return;
+        }
+
+
+        const evento = datos.evento;
+
+
+        contenedor.innerHTML =
+          "<strong>" +
+          evento.nombre +
+          "</strong><br>" +
+
+          "ID: " +
+          evento.id +
+          "<br>" +
+
+          "Inicio: " +
+          evento.fechaInicio +
+          " " +
+          evento.horaInicio +
+          "<br>" +
+
+          "Fin: " +
+          evento.fechaFin +
+          " " +
+          evento.horaFin +
+          "<br>" +
+
+          "Estado: " +
+          evento.estado;
+      }
+    );
+  }
+
+
+  /*
+   * Crear evento
+   */
+  function crearEvento() {
+
+    const nombre =
+      document.getElementById("nombreEvento")
+        .value.trim();
+
+    const fechaInicio =
+      document.getElementById("fechaInicio")
+        .value;
+
+    const fechaFin =
+      document.getElementById("fechaFin")
+        .value;
+
+    const horaInicio =
+      document.getElementById("horaInicio")
+        .value;
+
+    const horaFin =
+      document.getElementById("horaFin")
+        .value;
+
+
+    if (
+      !nombre ||
+      !fechaInicio ||
+      !fechaFin ||
+      !horaInicio ||
+      !horaFin
+    ) {
+
+      mostrarEstado(
+        "Completa todos los campos.",
+        true
+      );
+
+      return;
+    }
+
+
+    const btn =
+      document.getElementById("btnCrear");
+
+    btn.disabled = true;
+
+    btn.textContent =
+      "Creando evento...";
+
+
+    mostrarEstado(
+      "Verificando disponibilidad..."
+    );
+
+
+    llamarBackend(
+      {
+        accion: "crearEvento",
+        nombre: nombre,
+        fechaInicio: fechaInicio,
+        fechaFin: fechaFin,
+        horaInicio: horaInicio,
+        horaFin: horaFin
+      },
+
+      function(datos) {
+
+        btn.disabled = false;
+
+        btn.textContent =
+          "Crear evento";
+
+
+        if (!datos.ok) {
+
+          mostrarEstado(
+            datos.mensaje,
+            true
+          );
+
+          return;
+        }
+
+
+        mostrarEstado(
+          datos.mensaje
+        );
+
+
+        document.getElementById(
+          "nombreEvento"
+        ).value = "";
+
+        document.getElementById(
+          "fechaInicio"
+        ).value = "";
+
+        document.getElementById(
+          "fechaFin"
+        ).value = "";
+
+        document.getElementById(
+          "horaInicio"
+        ).value = "";
+
+        document.getElementById(
+          "horaFin"
+        ).value = "";
+
+
+        cargarEventoActual();
+
+      }
+    );
+  }
+
+
+  /*
+   * Cargar información al abrir la página
+   */
+  cargarEventoActual();
+
+</script>
+
+</body>
+</html>
+```
