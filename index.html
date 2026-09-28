@@ -71,9 +71,6 @@
 
   <script>
 
-    const params = new URLSearchParams(window.location.search);
-    const idEvento = params.get("evento") || "";
-
     const estado = document.getElementById("estado");
     const resultado = document.getElementById("resultado");
 
@@ -110,11 +107,10 @@
   const script = document.createElement("script");
 
   script.src =
-    "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KpaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec" +
-    "?accion=checkin" +
-    "&codigoQR=" + encodeURIComponent(codigoQR) +
-    "&idEvento=" + encodeURIComponent(idEvento) +
-    "&callback=" + callbackName;
+  "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KpaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec" +
+  "?accion=checkin" +
+  "&codigoQR=" + encodeURIComponent(codigoQR) +
+  "&callback=" + callbackName;
 
   script.onerror = function() {
 
