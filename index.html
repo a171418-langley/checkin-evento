@@ -48,9 +48,85 @@
       border-radius: 10px;
       font-size: 18px;
     }
+
+    .pantalla-acceso {
+  position: fixed;
+  inset: 0;
+  background: #f4f6f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.login {
+  width: 90%;
+  max-width: 400px;
+  background: white;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.12);
+}
+
+.login h2 {
+  margin-top: 0;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.login input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+.login button {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 8px;
+  background: #222;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.login button:disabled {
+  background: #999;
+}
+
+#mensajeAcceso {
+  margin-top: 15px;
+  text-align: center;
+  color: #721c24;
+}
+    
   </style>
 </head>
 
+  <div id="pantallaAcceso" class="pantalla-acceso">
+  <div class="login">
+    <h2>Acceso al check-in</h2>
+
+    <input
+      type="password"
+      id="claveCheckinInput"
+      placeholder="Contraseña"
+      autocomplete="off"
+    >
+
+    <button id="btnAcceder" onclick="iniciarSesion()">
+      Acceder
+    </button>
+
+    <div id="mensajeAcceso"></div>
+  </div>
+</div>
+  
 <body>
 
   <div class="contenedor">
@@ -75,7 +151,88 @@
     const resultado = document.getElementById("resultado");
 
     let procesando = false;
+    let claveCheckin = "";
 
+    function iniciarSesion() {
+
+  const input = document.getElementById("claveCheckinInput");
+  const boton = document.getElementById("btnAcceder");
+  const mensaje = document.getElementById("mensajeAcceso");
+
+  const clave = input.value.trim();
+
+  if (!clave) {
+    mensaje.textContent = "Debes ingresar una contraseña.";
+    return;
+  }
+
+  boton.disabled = true;
+  boton.textContent = "Verificando...";
+  mensaje.textContent = "";
+
+  claveCheckin = clave;
+
+  verificarClaveCheckin(function(correcta) {
+
+    if (!correcta) {
+
+      claveCheckin = "";
+
+      boton.disabled = false;
+      boton.textContent = "Acceder";
+
+      mensaje.textContent = "Contraseña incorrecta.";
+
+      input.value = "";
+      input.focus();
+
+      return;
+    }
+
+    document.getElementById("pantallaAcceso").style.display = "none";
+
+    boton.disabled = false;
+    boton.textContent = "Acceder";
+
+    iniciarCamara();
+  });
+}
+
+    function verificarClaveCheckin(callback) {
+
+  const callbackName = "verificarCheckin_" + Date.now();
+
+  window[callbackName] = function(datos) {
+
+    const correcta =
+      datos &&
+      datos.ok === true;
+
+    delete window[callbackName];
+    script.remove();
+
+    callback(correcta);
+  };
+
+  const script = document.createElement("script");
+
+  script.src =
+    "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KpaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec" +
+    "?accion=validarCheckin" +
+    "&clave=" + encodeURIComponent(claveCheckin) +
+    "&callback=" + callbackName;
+
+  script.onerror = function() {
+
+    delete window[callbackName];
+    script.remove();
+
+    callback(false);
+  };
+
+  document.body.appendChild(script);
+}
+    
     function qrDetectado(codigoQR) {
 
   if (procesando) return;
@@ -129,33 +286,41 @@
       // No mostramos errores de lectura continuamente.
     }
 
-    const lector = new Html5Qrcode("reader");
+    let lector = null;
 
-    lector.start(
-      { facingMode: "environment" },
-      {
-        fps: 10,
-        qrbox: {
-          width: 250,
-          height: 250
-        }
-      },
-      qrDetectado,
-      errorQR
-    )
-    .then(() => {
-      estado.textContent = "📷 Cámara activa — escanea un QR";
-    })
-    .catch(error => {
-      console.error(error);
+function iniciarCamara() {
 
-      estado.textContent =
-        "❌ No se pudo iniciar la cámara.";
+  lector = new Html5Qrcode("reader");
 
-      resultado.textContent =
-        "Verifica los permisos de cámara del navegador.";
-    });
+  lector.start(
+    { facingMode: "environment" },
+    {
+      fps: 10,
+      qrbox: {
+        width: 250,
+        height: 250
+      }
+    },
+    qrDetectado,
+    errorQR
+  )
+  .then(() => {
 
+    estado.textContent =
+      "📷 Cámara activa — escanea un QR";
+
+  })
+  .catch(error => {
+
+    console.error(error);
+
+    estado.textContent =
+      "❌ No se pudo iniciar la cámara.";
+
+    resultado.textContent =
+      "Verifica los permisos de cámara del navegador.";
+  });
+}
   </script>
 
 </body>
