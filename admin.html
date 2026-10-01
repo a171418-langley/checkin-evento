@@ -96,8 +96,84 @@
     .sin-evento {
       color: #555;
     }
+    
+    .pantalla-acceso {
+  position: fixed;
+  inset: 0;
+  background: #f4f6f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.login {
+  width: 90%;
+  max-width: 400px;
+  background: white;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.12);
+}
+
+.login h2 {
+  margin-top: 0;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.login input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+.login button {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 8px;
+  background: #222;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.login button:disabled {
+  background: #999;
+}
+
+#mensajeAcceso {
+  margin-top: 15px;
+  text-align: center;
+  color: #721c24;
+}
+    
   </style>
 </head>
+
+  <div id="pantallaAcceso" class="pantalla-acceso">
+  <div class="login">
+    <h2>Acceso de administrador</h2>
+
+    <input
+      type="password"
+      id="claveAdminInput"
+      placeholder="Contraseña"
+      autocomplete="off"
+    >
+
+    <button id="btnAcceder" onclick="iniciarSesion()">
+      Acceder
+    </button>
+
+    <div id="mensajeAcceso"></div>
+  </div>
+</div>
 
 <body>
 
@@ -203,6 +279,59 @@
     "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KpaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec";
   let claveAdmin = "";
 
+  function iniciarSesion() {
+
+  const input = document.getElementById("claveAdminInput");
+  const boton = document.getElementById("btnAcceder");
+  const mensaje = document.getElementById("mensajeAcceso");
+
+  const clave = input.value.trim();
+
+  if (!clave) {
+    mensaje.textContent = "Debes ingresar una contraseña.";
+    return;
+  }
+
+  boton.disabled = true;
+  boton.textContent = "Verificando...";
+  mensaje.textContent = "";
+
+  claveAdmin = clave;
+
+  // Hacer una petición que requiera autenticación
+  llamarBackend(
+    { accion: "obtenerEventoActivo" },
+    function(datos) {
+
+      if (
+        datos &&
+        datos.ok === false &&
+        datos.mensaje === "Acceso no autorizado."
+      ) {
+
+        claveAdmin = "";
+
+        boton.disabled = false;
+        boton.textContent = "Acceder";
+
+        mensaje.textContent = "Contraseña incorrecta.";
+
+        input.value = "";
+        input.focus();
+
+        return;
+      }
+
+      // Acceso correcto
+      document.getElementById("pantallaAcceso").style.display = "none";
+
+      boton.disabled = false;
+      boton.textContent = "Acceder";
+
+      cargarEventoActual();
+    }
+  );
+}
 
   /*
    * Comunicación con Apps Script mediante JSONP
@@ -461,56 +590,7 @@ if (!confirmar) {
   /*
    * Cargar información al abrir la página
    */
-  function pedirClaveAdmin() {
-
-  while (!claveAdmin) {
-
-    const clave = prompt(
-      "Ingresa la contraseña de administrador:"
-    );
-
-    if (clave === null) {
-      document.getElementById("eventoActual").innerHTML =
-        "<span class='sin-evento'>Acceso cancelado.</span>";
-      return;
-    }
-
-    if (clave.trim() === "") {
-      alert("Debes ingresar una contraseña.");
-      continue;
-    }
-
-    claveAdmin = clave.trim();
-
-    // Verificar que la clave sea válida
-    llamarBackend(
-      { accion: "obtenerEventoActivo" },
-      function(datos) {
-
-        if (
-          datos &&
-          datos.ok === false &&
-          datos.mensaje === "Acceso no autorizado."
-        ) {
-
-          claveAdmin = "";
-
-          alert("Contraseña incorrecta.");
-
-          pedirClaveAdmin();
-
-          return;
-        }
-
-        cargarEventoActual();
-      }
-    );
-
-    return;
-  }
-}
-  
-  pedirClaveAdmin();
+ 
 
 </script>
 
