@@ -6,6 +6,8 @@
 
   <title>Administración de eventos</title>
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  
   <style>
     * {
       box-sizing: border-box;
@@ -258,7 +260,22 @@
         >
       </div>
 
+      <div class="campo">
+  <label for="archivoInvitados">
+    Lista de invitados
+  </label>
 
+  <input
+    type="file"
+    id="archivoInvitados"
+    accept=".xlsx,.xls,.csv"
+  >
+
+  <small>
+    El archivo debe contener las columnas Nombre y Correo.
+  </small>
+</div>
+      
       <button
         id="btnCrear"
         onclick="crearEvento()"
@@ -457,68 +474,118 @@
   /*
    * Crear evento
    */
-  function crearEvento() {
+  async function crearEvento() {
 
-    const nombre =
-      document.getElementById("nombreEvento")
-        .value.trim();
+  const nombre =
+    document.getElementById("nombreEvento")
+      .value.trim();
 
-    const fechaInicio =
-      document.getElementById("fechaInicio")
-        .value;
+  const fechaInicio =
+    document.getElementById("fechaInicio")
+      .value;
 
-    const fechaFin =
-      document.getElementById("fechaFin")
-        .value;
+  const fechaFin =
+    document.getElementById("fechaFin")
+      .value;
 
-    const horaInicio =
-      document.getElementById("horaInicio")
-        .value;
+  const horaInicio =
+    document.getElementById("horaInicio")
+      .value;
 
-    const horaFin =
-      document.getElementById("horaFin")
-        .value;
+  const horaFin =
+    document.getElementById("horaFin")
+      .value;
+
+  const archivo =
+    document.getElementById("archivoInvitados")
+      .files[0];
 
 
-    if (
-      !nombre ||
-      !fechaInicio ||
-      !fechaFin ||
-      !horaInicio ||
-      !horaFin
-    ) {
+  if (
+    !nombre ||
+    !fechaInicio ||
+    !fechaFin ||
+    !horaInicio ||
+    !horaFin
+  ) {
 
-      mostrarEstado(
-        "Completa todos los campos.",
-        true
+    mostrarEstado(
+      "Completa todos los campos.",
+      true
+    );
+
+    return;
+  }
+
+
+  if (!archivo) {
+
+    mostrarEstado(
+      "Selecciona el archivo de invitados.",
+      true
+    );
+
+    return;
+  }
+
+
+  const confirmar =
+    confirm(
+      "¿Estás seguro/a de que deseas crear este evento?\n\n" +
+      "El evento y la lista de invitados serán registrados."
+    );
+
+  if (!confirmar) {
+    return;
+  }
+
+
+  const btn =
+    document.getElementById("btnCrear");
+
+  btn.disabled = true;
+
+  btn.textContent =
+    "Creando evento...";
+
+
+  try {
+
+    /*
+     * ==========================================
+     * 1. LEER ARCHIVO
+     * ==========================================
+     */
+
+    const invitados =
+      await leerArchivoInvitados(archivo);
+
+
+    /*
+     * ==========================================
+     * 2. VALIDAR LISTA
+     * ==========================================
+     */
+
+    if (invitados.length === 0) {
+
+      throw new Error(
+        "El archivo no contiene invitados válidos."
       );
 
-      return;
     }
-
-    const confirmar =
-  confirm(
-    "¿Estás seguro/a de que deseas crear este evento?\n\n" +
-    "Una vez creado, la información no podrá revertirse."
-  );
-
-if (!confirmar) {
-  return;
-}
-
-    const btn =
-      document.getElementById("btnCrear");
-
-    btn.disabled = true;
-
-    btn.textContent =
-      "Creando evento...";
 
 
     mostrarEstado(
-      "Verificando disponibilidad..."
+      "Creando evento y registrando invitados..."
     );
 
+
+    /*
+     * ==========================================
+     * 3. CREAR EVENTO
+     * ==========================================
+     */
 
     llamarBackend(
       {
@@ -530,15 +597,14 @@ if (!confirmar) {
         horaFin: horaFin
       },
 
-      function(datos) {
-
-        btn.disabled = false;
-
-        btn.textContent =
-          "Crear evento";
-
+      async function(datos) {
 
         if (!datos.ok) {
+
+          btn.disabled = false;
+
+          btn.textContent =
+            "Crear evento";
 
           mostrarEstado(
             datos.mensaje,
@@ -549,44 +615,336 @@ if (!confirmar) {
         }
 
 
-        mostrarEstado(
-          datos.mensaje
-        );
+        const idEvento =
+          datos.id;
 
 
-        document.getElementById(
-          "nombreEvento"
-        ).value = "";
+        /*
+         * ==========================================
+         * 4. CARGAR INVITADOS POR LOTES
+         * ==========================================
+         */
 
-        document.getElementById(
-          "fechaInicio"
-        ).value = "";
+        try {
 
-        document.getElementById(
-          "fechaFin"
-        ).value = "";
-
-        document.getElementById(
-          "horaInicio"
-        ).value = "";
-
-        document.getElementById(
-          "horaFin"
-        ).value = "";
+          await cargarInvitadosPorLotes(
+            idEvento,
+            invitados
+          );
 
 
-        cargarEventoActual();
+          /*
+           * ======================================
+           * 5. TERMINADO
+           * ======================================
+           */
 
-        setInterval(
-          cargarEventoActual,
-          30000
-        );
+          mostrarEstado(
+            "Evento y lista de invitados creados exitosamente."
+          );
+
+
+          /*
+           * Limpiar formulario
+           */
+
+          document.getElementById(
+            "nombreEvento"
+          ).value = "";
+
+          document.getElementById(
+            "fechaInicio"
+          ).value = "";
+
+          document.getElementById(
+            "fechaFin"
+          ).value = "";
+
+          document.getElementById(
+            "horaInicio"
+          ).value = "";
+
+          document.getElementById(
+            "horaFin"
+          ).value = "";
+
+          document.getElementById(
+            "archivoInvitados"
+          ).value = "";
+
+
+          btn.disabled = false;
+
+          btn.textContent =
+            "Crear evento";
+
+
+          cargarEventoActual();
+
+
+        } catch (error) {
+
+          btn.disabled = false;
+
+          btn.textContent =
+            "Crear evento";
+
+          mostrarEstado(
+            "El evento fue creado, pero hubo un problema al cargar la lista: " +
+            error.message,
+            true
+          );
+
+        }
 
       }
     );
+
+  } catch (error) {
+
+    btn.disabled = false;
+
+    btn.textContent =
+      "Crear evento";
+
+    mostrarEstado(
+      error.message,
+      true
+    );
+  }
+}
+
+  async function leerArchivoInvitados(archivo) {
+
+  const datos =
+    await archivo.arrayBuffer();
+
+  const libro =
+    XLSX.read(
+      datos,
+      {
+        type: "array"
+      }
+    );
+
+  const nombreHoja =
+    libro.SheetNames[0];
+
+  const hoja =
+    libro.Sheets[nombreHoja];
+
+  const filas =
+    XLSX.utils.sheet_to_json(
+      hoja,
+      {
+        defval: ""
+      }
+    );
+
+
+  if (filas.length === 0) {
+
+    throw new Error(
+      "El archivo está vacío."
+    );
+
   }
 
 
+  /*
+   * Buscar columnas ignorando mayúsculas,
+   * minúsculas y espacios.
+   */
+
+  const primeraFila =
+    filas[0];
+
+  const columnas =
+    Object.keys(primeraFila);
+
+
+  const columnaNombre =
+    columnas.find(
+      columna =>
+        normalizarColumna(columna) === "nombre"
+    );
+
+  const columnaCorreo =
+    columnas.find(
+      columna =>
+        normalizarColumna(columna) === "correo"
+    );
+
+
+  if (!columnaNombre || !columnaCorreo) {
+
+    throw new Error(
+      "El archivo debe contener las columnas Nombre y Correo."
+    );
+
+  }
+
+
+  const resultado = [];
+
+  const correosVistos =
+    new Set();
+
+
+  filas.forEach((fila, indice) => {
+
+    const nombre =
+      String(
+        fila[columnaNombre] || ""
+      ).trim();
+
+    const correo =
+      String(
+        fila[columnaCorreo] || ""
+      )
+      .trim()
+      .toLowerCase();
+
+
+    /*
+     * Ignorar filas completamente vacías
+     */
+
+    if (!nombre && !correo) {
+      return;
+    }
+
+
+    if (!nombre || !correo) {
+
+      throw new Error(
+        "La fila " +
+        (indice + 2) +
+        " tiene Nombre o Correo vacío."
+      );
+
+    }
+
+
+    if (!correoValido(correo)) {
+
+      throw new Error(
+        "El correo de la fila " +
+        (indice + 2) +
+        " no tiene un formato válido: " +
+        correo
+      );
+
+    }
+
+
+    if (correosVistos.has(correo)) {
+
+      throw new Error(
+        "El correo aparece duplicado en el archivo: " +
+        correo
+      );
+
+    }
+
+
+    correosVistos.add(correo);
+
+
+    resultado.push({
+      nombre: nombre,
+      correo: correo
+    });
+
+  });
+
+
+  return resultado;
+}
+
+
+function normalizarColumna(valor) {
+
+  return String(valor || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+
+function correoValido(correo) {
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    .test(correo);
+
+}
+
+
+async function cargarInvitadosPorLotes(
+  idEvento,
+  invitados
+) {
+
+  /*
+   * 50 invitados por petición.
+   *
+   * Esto evita enviar 800 registros
+   * en una sola URL.
+   */
+
+  const TAMANO_LOTE = 50;
+
+
+  for (
+    let inicio = 0;
+    inicio < invitados.length;
+    inicio += TAMANO_LOTE
+  ) {
+
+    const lote =
+      invitados.slice(
+        inicio,
+        inicio + TAMANO_LOTE
+      );
+
+
+    const resultado =
+      await llamarBackendPromesa({
+        accion: "cargarInvitados",
+        idEvento: idEvento,
+        datos: JSON.stringify(lote)
+      });
+
+
+    if (!resultado.ok) {
+
+      throw new Error(
+        resultado.mensaje ||
+        "No se pudo cargar un lote de invitados."
+      );
+
+    }
+  }
+}
+
+
+function llamarBackendPromesa(parametros) {
+
+  return new Promise(
+    function(resolve) {
+
+      llamarBackend(
+        parametros,
+        function(datos) {
+          resolve(datos);
+        }
+      );
+
+    }
+  );
+}
+  
   /*
    * Cargar información al abrir la página
    */
