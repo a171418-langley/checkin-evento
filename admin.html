@@ -639,8 +639,14 @@
            * ======================================
            */
 
-          mostrarEstado(
-            "Evento y lista de invitados creados exitosamente."
+        const cierre = await llamarBackendPromesa({
+       accion: "finalizarCarga",
+       idEvento: idEvento,
+       total: invitados.length
+     });
+     if (!cierre.ok) throw new Error(cierre.mensaje);
+
+     mostrarEstado("Evento creado y " + invitados.length + " invitados registrados.");
           );
 
 
@@ -893,7 +899,7 @@ async function cargarInvitadosPorLotes(
    * en una sola URL.
    */
 
-  const TAMANO_LOTE = 50;
+  const TAMANO_LOTE = 25;
 
 
   for (
