@@ -646,7 +646,12 @@
      });
      if (!cierre.ok) throw new Error(cierre.mensaje);
 
-     mostrarEstado("Evento creado y " + invitados.length + " invitados registrados.");
+     mostrarEstado(
+  "Evento creado y " +
+  invitados.length +
+  " invitados registrados. " +
+  "Los QR se generan en segundo plano."
+);
           );
 
 
