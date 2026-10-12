@@ -6,9 +6,11 @@
 
   <title>Check-in</title>
 
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -18,7 +20,7 @@
 
     .contenedor {
       max-width: 600px;
-      margin: 30px auto;
+      margin: 20px auto;
       padding: 20px;
     }
 
@@ -43,286 +45,557 @@
 
     #resultado {
       margin-top: 20px;
-      padding: 15px;
+      padding: 20px;
       background: white;
       border-radius: 10px;
-      font-size: 18px;
+      font-size: 22px;
+      font-weight: bold;
+      line-height: 1.4;
+      min-height: 80px;
+    }
+
+    #resultado.procesando {
+      background: #e2e3e5;
+      color: #383d41;
+    }
+
+    #resultado.ok {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    #resultado.aviso {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    #resultado.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .btn-salir {
+      margin-top: 25px;
+      padding: 10px 18px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      background: white;
+      color: #444;
+      font-size: 14px;
+      cursor: pointer;
     }
 
     .pantalla-acceso {
-  position: fixed;
-  inset: 0;
-  background: #f4f6f8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
+      position: fixed;
+      inset: 0;
+      background: #f4f6f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
 
-.login {
-  width: 90%;
-  max-width: 400px;
-  background: white;
-  padding: 30px;
-  border-radius: 14px;
-  box-shadow: 0 3px 15px rgba(0,0,0,0.12);
-}
+    .login {
+      width: 90%;
+      max-width: 400px;
+      background: white;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.12);
+    }
 
-.login h2 {
-  margin-top: 0;
-  text-align: center;
-  margin-bottom: 25px;
-}
+    .login h2 {
+      margin-top: 0;
+      text-align: center;
+      margin-bottom: 25px;
+    }
 
-.login input {
-  width: 100%;
-  padding: 13px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px;
-  margin-bottom: 15px;
-}
+    .login input {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
 
-.login button {
-  width: 100%;
-  padding: 13px;
-  border: none;
-  border-radius: 8px;
-  background: #222;
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-}
+    .login button {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      background: #222;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-.login button:disabled {
-  background: #999;
-}
+    .login button:disabled {
+      background: #999;
+    }
 
-#mensajeAcceso {
-  margin-top: 15px;
-  text-align: center;
-  color: #721c24;
-}
-    
+    #mensajeAcceso {
+      margin-top: 15px;
+      text-align: center;
+      color: #721c24;
+    }
   </style>
 </head>
 
-  <div id="pantallaAcceso" class="pantalla-acceso">
-  <div class="login">
-    <h2>Acceso al check-in</h2>
-
-    <input
-      type="password"
-      id="claveCheckinInput"
-      placeholder="Contraseña"
-      autocomplete="off"
-    >
-
-    <button id="btnAcceder" onclick="iniciarSesion()">
-      Acceder
-    </button>
-
-    <div id="mensajeAcceso"></div>
-  </div>
-</div>
-  
 <body>
+
+  <!-- ACCESO -->
+  <div id="pantallaAcceso" class="pantalla-acceso">
+    <div class="login">
+      <h2>Acceso al check-in</h2>
+
+      <input
+        type="password"
+        id="claveCheckinInput"
+        placeholder="Contraseña"
+        autocomplete="off"
+      >
+
+      <button id="btnAcceder">Acceder</button>
+
+      <div id="mensajeAcceso"></div>
+    </div>
+  </div>
+
 
   <div class="contenedor">
 
     <h1>Check-in</h1>
 
-    <div id="estado">
-      Iniciando cámara...
-    </div>
+    <div id="estado">Esperando acceso...</div>
 
     <div id="reader"></div>
 
-    <div id="resultado">
-      Esperando código QR...
-    </div>
+    <div id="resultado">Esperando código QR...</div>
+
+    <button id="btnSalir" class="btn-salir">Salir</button>
 
   </div>
 
-  <script>
 
-    const estado = document.getElementById("estado");
-    const resultado = document.getElementById("resultado");
+<script>
 
-    let procesando = false;
-    let claveCheckin = "";
+  /*
+   * ==========================================
+   * CONFIGURACIÓN
+   * ==========================================
+   * Si cambias de implementación en Apps Script,
+   * esta es la única línea que debes actualizar.
+   */
+  const URL_APPS_SCRIPT =
+    "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KpaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec";
 
-    function iniciarSesion() {
+  // Espera máxima por cada respuesta del servidor.
+  const TIMEOUT_MS = 15000;
 
-  const input = document.getElementById("claveCheckinInput");
-  const boton = document.getElementById("btnAcceder");
-  const mensaje = document.getElementById("mensajeAcceso");
+  // Pausa tras mostrar un resultado, antes de aceptar otro QR.
+  const PAUSA_TRAS_RESULTADO_MS = 1200;
 
-  const clave = input.value.trim();
+  // Si el mismo QR sigue frente a la cámara, se ignora este tiempo.
+  const IGNORAR_MISMO_CODIGO_MS = 8000;
 
-  if (!clave) {
-    mensaje.textContent = "Debes ingresar una contraseña.";
-    return;
+  const MENSAJE_NO_AUTORIZADO = "Acceso no autorizado.";
+
+  // Lector de QR: primero el archivo local del repositorio y,
+  // si no está, una copia fija desde unpkg.
+  const FUENTES_LECTOR = [
+    "html5-qrcode.min.js",
+    "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
+  ];
+
+  const $ = id => document.getElementById(id);
+
+  let claveCheckin = sessionStorage.getItem("claveCheckin") || "";
+  let procesando = false;
+  let ultimoCodigo = "";
+  let ultimoMomento = 0;
+  let lector = null;
+
+
+  /*
+   * ==========================================
+   * COMUNICACIÓN CON APPS SCRIPT (JSONP)
+   * ==========================================
+   */
+  function llamarBackend(parametros, callback) {
+
+    const nombreCallback =
+      "cb_" + Date.now() + "_" + Math.floor(Math.random() * 1e6);
+
+    const script = document.createElement("script");
+
+    let terminado = false;
+    let temporizador = null;
+
+    function terminar(datos) {
+
+      if (terminado) return;
+
+      terminado = true;
+
+      clearTimeout(temporizador);
+
+      // Si la respuesta llega tarde, que no cause errores.
+      window[nombreCallback] = function () {};
+
+      script.remove();
+
+      callback(datos);
+    }
+
+    window[nombreCallback] = terminar;
+
+    temporizador = setTimeout(function () {
+      terminar({
+        ok: false,
+        timeout: true,
+        mensaje: "El servidor tardó demasiado en responder."
+      });
+    }, TIMEOUT_MS);
+
+    script.onerror = function () {
+      terminar({
+        ok: false,
+        mensaje: "No se pudo comunicar con el servidor."
+      });
+    };
+
+    const query = new URLSearchParams(parametros);
+
+    query.append("callback", nombreCallback);
+
+    script.src = URL_APPS_SCRIPT + "?" + query.toString();
+
+    document.body.appendChild(script);
   }
 
-  boton.disabled = true;
-  boton.textContent = "Verificando...";
-  mensaje.textContent = "";
 
-  claveCheckin = clave;
+  /*
+   * ==========================================
+   * PANTALLA DE RESULTADO
+   * ==========================================
+   */
+  function mostrar(texto, clase) {
 
-  verificarClaveCheckin(function(correcta) {
+    const resultado = $("resultado");
 
-    if (!correcta) {
+    // textContent: el nombre del invitado nunca se interpreta como HTML.
+    resultado.textContent = texto;
+    resultado.className = clase || "";
+  }
 
-      claveCheckin = "";
 
-      boton.disabled = false;
-      boton.textContent = "Acceder";
+  /*
+   * ==========================================
+   * ACCESO
+   * ==========================================
+   */
+  function mostrarLogin(mensaje) {
 
-      mensaje.textContent = "Contraseña incorrecta.";
+    $("claveCheckinInput").value = "";
+    $("mensajeAcceso").textContent = mensaje || "";
+    $("btnAcceder").disabled = false;
+    $("btnAcceder").textContent = "Acceder";
+    $("pantallaAcceso").style.display = "flex";
+  }
 
-      input.value = "";
-      input.focus();
 
+  function verificarClave(clave, callback) {
+
+    llamarBackend(
+      { accion: "validarCheckin", clave: clave },
+      function (datos) {
+        callback(datos);
+      }
+    );
+  }
+
+
+  function iniciarSesion() {
+
+    const input = $("claveCheckinInput");
+    const boton = $("btnAcceder");
+    const mensaje = $("mensajeAcceso");
+
+    const clave = input.value.trim();
+
+    if (!clave) {
+      mensaje.textContent = "Debes ingresar una contraseña.";
       return;
     }
 
-    document.getElementById("pantallaAcceso").style.display = "none";
+    boton.disabled = true;
+    boton.textContent = "Verificando...";
+    mensaje.textContent = "";
 
-    boton.disabled = false;
-    boton.textContent = "Acceder";
+    verificarClave(clave, function (datos) {
+
+      // Solo se entra si el servidor confirma explícitamente.
+      if (!datos || datos.ok !== true) {
+
+        boton.disabled = false;
+        boton.textContent = "Acceder";
+
+        mensaje.textContent =
+          datos && datos.mensaje === MENSAJE_NO_AUTORIZADO
+            ? "Contraseña incorrecta."
+            : (datos && datos.mensaje) ||
+              "No se pudo verificar el acceso.";
+
+        input.value = "";
+        input.focus();
+
+        return;
+      }
+
+      claveCheckin = clave;
+      sessionStorage.setItem("claveCheckin", clave);
+
+      entrar();
+    });
+  }
+
+
+  function entrar() {
+
+    $("pantallaAcceso").style.display = "none";
 
     iniciarCamara();
-  });
-}
+  }
 
-    function verificarClaveCheckin(callback) {
 
-  const callbackName = "verificarCheckin_" + Date.now();
+  async function salir(mensaje) {
 
-  window[callbackName] = function(datos) {
+    claveCheckin = "";
+    sessionStorage.removeItem("claveCheckin");
 
-    const correcta =
-      datos &&
-      datos.ok === true;
+    await detenerCamara();
 
-    delete window[callbackName];
-    script.remove();
+    mostrar("Esperando código QR...", "");
 
-    callback(correcta);
-  };
+    $("estado").textContent = "Esperando acceso...";
 
-  const script = document.createElement("script");
+    mostrarLogin(mensaje);
+  }
 
-  script.src =
-    "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KpaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec" +
-    "?accion=validarCheckin" +
-    "&clave=" + encodeURIComponent(claveCheckin) +
-    "&callback=" + callbackName;
 
-  script.onerror = function() {
+  /*
+   * ==========================================
+   * CÁMARA Y LECTURA DE QR
+   * ==========================================
+   */
+  function cargarLector() {
 
-    delete window[callbackName];
-    script.remove();
+    return new Promise(function (resolve, reject) {
 
-    callback(false);
-  };
-
-  document.body.appendChild(script);
-}
-    
-    function qrDetectado(codigoQR) {
-
-  if (procesando) return;
-
-  procesando = true;
-
-  resultado.innerHTML = "⏳ Procesando QR...";
-
-  const callbackName =
-    "respuestaCheckin_" + Date.now();
-
-  window[callbackName] = function(datos) {
-
-    if (datos.ok) {
-      resultado.innerHTML =
-        "✅ " + datos.mensaje;
-    } else {
-      resultado.innerHTML =
-        "❌ " + datos.mensaje;
-    }
-
-    delete window[callbackName];
-
-    setTimeout(() => {
-      procesando = false;
-    }, 2500);
-  };
-
-  const script = document.createElement("script");
-
-  script.src =
-  "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KpaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec" +
-  "?accion=checkin" +
-  "&codigoQR=" + encodeURIComponent(codigoQR) +
-  "&clave=" + encodeURIComponent(claveCheckin) +
-  "&callback=" + callbackName;
-
-  script.onerror = function() {
-
-    resultado.innerHTML =
-      "❌ Error al comunicarse con el sistema.";
-
-    delete window[callbackName];
-
-    procesando = false;
-  };
-
-  document.body.appendChild(script);
-}
-
-    function errorQR(errorMessage) {
-      // No mostramos errores de lectura continuamente.
-    }
-
-    let lector = null;
-
-function iniciarCamara() {
-
-  lector = new Html5Qrcode("reader");
-
-  lector.start(
-    { facingMode: "environment" },
-    {
-      fps: 10,
-      qrbox: {
-        width: 250,
-        height: 250
+      if (window.Html5Qrcode) {
+        resolve();
+        return;
       }
-    },
-    qrDetectado,
-    errorQR
-  )
-  .then(() => {
 
-    estado.textContent =
-      "📷 Cámara activa — escanea un QR";
+      (function intentar(i) {
 
-  })
-  .catch(error => {
+        if (i >= FUENTES_LECTOR.length) {
+          reject(new Error("No se pudo cargar el lector de QR."));
+          return;
+        }
 
-    console.error(error);
+        const script = document.createElement("script");
 
-    estado.textContent =
-      "❌ No se pudo iniciar la cámara.";
+        script.src = FUENTES_LECTOR[i];
 
-    resultado.textContent =
-      "Verifica los permisos de cámara del navegador.";
+        script.onload = function () { resolve(); };
+
+        script.onerror = function () {
+          script.remove();
+          intentar(i + 1);
+        };
+
+        document.head.appendChild(script);
+
+      })(0);
+    });
+  }
+
+
+  async function iniciarCamara() {
+
+    $("estado").textContent = "Iniciando cámara...";
+
+    try {
+
+      await cargarLector();
+
+      lector = new Html5Qrcode("reader");
+
+      await lector.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 }
+        },
+        qrDetectado,
+        function () {
+          // No mostramos errores de lectura continuamente.
+        }
+      );
+
+      $("estado").textContent = "📷 Cámara activa — escanea un QR";
+
+    } catch (error) {
+
+      console.error(error);
+
+      lector = null;
+
+      $("estado").textContent = "❌ No se pudo iniciar la cámara.";
+
+      mostrar(
+        error && error.message === "No se pudo cargar el lector de QR."
+          ? error.message
+          : "Verifica los permisos de cámara del navegador.",
+        "error"
+      );
+    }
+  }
+
+
+  async function detenerCamara() {
+
+    if (!lector) return;
+
+    try {
+      await lector.stop();
+    } catch (error) {
+      // Ya estaba detenida.
+    }
+
+    lector = null;
+  }
+
+
+  function qrDetectado(texto) {
+
+    if (procesando) return;
+
+    const codigo = String(texto || "").trim();
+
+    if (!codigo) return;
+
+    const ahora = Date.now();
+
+    // El mismo QR frente a la cámara: se ignora un rato.
+    if (
+      codigo === ultimoCodigo &&
+      ahora - ultimoMomento < IGNORAR_MISMO_CODIGO_MS
+    ) {
+      return;
+    }
+
+    procesando = true;
+    ultimoCodigo = codigo;
+    ultimoMomento = ahora;
+
+    mostrar("⏳ Procesando QR...", "procesando");
+
+    llamarBackend(
+      {
+        accion: "checkin",
+        codigoQR: codigo,
+        clave: claveCheckin
+      },
+      function (datos) {
+
+        ultimoMomento = Date.now();
+
+        if (datos && datos.ok === true) {
+
+          mostrar("✅ " + datos.mensaje, "ok");
+
+        } else if (datos && datos.repetido) {
+
+          mostrar("⚠️ " + datos.mensaje, "aviso");
+
+        } else if (datos && datos.mensaje === MENSAJE_NO_AUTORIZADO) {
+
+          procesando = false;
+          salir("La sesión terminó. Ingresa de nuevo.");
+          return;
+
+        } else if (datos && datos.timeout) {
+
+          // El servidor pudo haber registrado el escaneo:
+          // se pide verificar antes de reintentar.
+          mostrar(
+            "⚠️ El servidor tardó en responder. Verifica en la lista " +
+            "si este invitado quedó registrado antes de volver a escanear.",
+            "aviso"
+          );
+
+        } else {
+
+          mostrar(
+            "❌ " + ((datos && datos.mensaje) || "Error desconocido."),
+            "error"
+          );
+        }
+
+        setTimeout(function () {
+          procesando = false;
+        }, PAUSA_TRAS_RESULTADO_MS);
+      }
+    );
+  }
+
+
+  /*
+   * ==========================================
+   * INICIO
+   * ==========================================
+   */
+  $("btnAcceder").addEventListener("click", iniciarSesion);
+
+  $("claveCheckinInput").addEventListener("keydown", function (evento) {
+    if (evento.key === "Enter") {
+      iniciarSesion();
+    }
   });
-}
-  </script>
+
+  $("btnSalir").addEventListener("click", function () {
+    salir("");
+  });
+
+  // Si ya había una sesión en esta pestaña, se verifica en silencio.
+  if (claveCheckin) {
+
+    $("btnAcceder").disabled = true;
+    $("btnAcceder").textContent = "Verificando...";
+
+    verificarClave(claveCheckin, function (datos) {
+
+      if (datos && datos.ok === true) {
+        entrar();
+        return;
+      }
+
+      claveCheckin = "";
+      sessionStorage.removeItem("claveCheckin");
+
+      mostrarLogin(
+        datos && datos.mensaje === MENSAJE_NO_AUTORIZADO
+          ? ""
+          : (datos && datos.mensaje) || ""
+      );
+    });
+  }
+
+</script>
 
 </body>
 </html>
