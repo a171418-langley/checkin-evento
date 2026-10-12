@@ -6,8 +6,8 @@
 
   <title>Administración de eventos</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -62,6 +62,13 @@
       font-size: 16px;
     }
 
+    small {
+      display: block;
+      margin-top: 6px;
+      color: #666;
+      line-height: 1.4;
+    }
+
     button {
       width: 100%;
       padding: 14px;
@@ -89,6 +96,7 @@
       border-radius: 8px;
       display: none;
       text-align: center;
+      line-height: 1.4;
     }
 
     .info {
@@ -98,86 +106,64 @@
     .sin-evento {
       color: #555;
     }
-    
+
     .pantalla-acceso {
-  position: fixed;
-  inset: 0;
-  background: #f4f6f8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
+      position: fixed;
+      inset: 0;
+      background: #f4f6f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
 
-.login {
-  width: 90%;
-  max-width: 400px;
-  background: white;
-  padding: 30px;
-  border-radius: 14px;
-  box-shadow: 0 3px 15px rgba(0,0,0,0.12);
-}
+    .login {
+      width: 90%;
+      max-width: 400px;
+      background: white;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.12);
+    }
 
-.login h2 {
-  margin-top: 0;
-  text-align: center;
-  margin-bottom: 25px;
-}
+    .login h2 {
+      margin-top: 0;
+      text-align: center;
+      margin-bottom: 25px;
+    }
 
-.login input {
-  width: 100%;
-  padding: 13px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px;
-  margin-bottom: 15px;
-}
+    .login input {
+      margin-bottom: 15px;
+    }
 
-.login button {
-  width: 100%;
-  padding: 13px;
-  border: none;
-  border-radius: 8px;
-  background: #222;
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.login button:disabled {
-  background: #999;
-}
-
-#mensajeAcceso {
-  margin-top: 15px;
-  text-align: center;
-  color: #721c24;
-}
-    
+    #mensajeAcceso {
+      margin-top: 15px;
+      text-align: center;
+      color: #721c24;
+    }
   </style>
 </head>
 
-  <div id="pantallaAcceso" class="pantalla-acceso">
-  <div class="login">
-    <h2>Administración de eventos</h2>
-
-    <input
-      type="password"
-      id="claveAdminInput"
-      placeholder="Contraseña"
-      autocomplete="off"
-    >
-
-    <button id="btnAcceder" onclick="iniciarSesion()">
-      Acceder
-    </button>
-
-    <div id="mensajeAcceso"></div>
-  </div>
-</div>
-
 <body>
+
+  <!-- ACCESO -->
+  <div id="pantallaAcceso" class="pantalla-acceso">
+    <div class="login">
+      <h2>Administración de eventos</h2>
+
+      <input
+        type="password"
+        id="claveAdminInput"
+        placeholder="Contraseña"
+        autocomplete="off"
+      >
+
+      <button id="btnAcceder">Acceder</button>
+
+      <div id="mensajeAcceso"></div>
+    </div>
+  </div>
+
 
   <div class="contenedor">
 
@@ -201,10 +187,7 @@
       <h2>Crear nuevo evento</h2>
 
       <div class="campo">
-        <label for="nombreEvento">
-          Nombre del evento
-        </label>
-
+        <label for="nombreEvento">Nombre del evento</label>
         <input
           type="text"
           id="nombreEvento"
@@ -212,76 +195,43 @@
         >
       </div>
 
-
       <div class="campo">
-        <label for="fechaInicio">
-          Fecha de inicio
-        </label>
-
-        <input
-          type="date"
-          id="fechaInicio"
-        >
-      </div>
-
-
-      <div class="campo">
-        <label for="fechaFin">
-          Fecha de finalización
-        </label>
-
-        <input
-          type="date"
-          id="fechaFin"
-        >
-      </div>
-
-
-      <div class="campo">
-        <label for="horaInicio">
-          Hora de inicio
-        </label>
-
-        <input
-          type="time"
-          id="horaInicio"
-        >
-      </div>
-
-
-      <div class="campo">
-        <label for="horaFin">
-          Hora de finalización
-        </label>
-
-        <input
-          type="time"
-          id="horaFin"
-        >
+        <label for="fechaInicio">Fecha de inicio</label>
+        <input type="date" id="fechaInicio">
       </div>
 
       <div class="campo">
-  <label for="archivoInvitados">
-    Lista de invitados
-  </label>
+        <label for="fechaFin">Fecha de finalización</label>
+        <input type="date" id="fechaFin">
+        <small>
+          Si el evento termina después de medianoche, pon aquí el día en
+          que empieza y una hora de finalización menor a la de inicio.
+          Ejemplo: empieza el 5/oct a las 20:00 y termina el 6/oct a la
+          01:00 → fecha de finalización 5/oct, hora de finalización 01:00.
+        </small>
+      </div>
 
-  <input
-    type="file"
-    id="archivoInvitados"
-    accept=".xlsx,.xls,.csv"
-  >
+      <div class="campo">
+        <label for="horaInicio">Hora de inicio</label>
+        <input type="time" id="horaInicio">
+      </div>
 
-  <small>
-    El archivo debe contener las columnas Nombre y Correo.
-  </small>
-</div>
-      
-      <button
-        id="btnCrear"
-        onclick="crearEvento()"
-      >
-        Crear evento
-      </button>
+      <div class="campo">
+        <label for="horaFin">Hora de finalización</label>
+        <input type="time" id="horaFin">
+      </div>
+
+      <div class="campo">
+        <label for="archivoInvitados">Lista de invitados</label>
+        <input
+          type="file"
+          id="archivoInvitados"
+          accept=".xlsx,.xls,.csv"
+        >
+        <small>El archivo debe contener las columnas Nombre y Correo.</small>
+      </div>
+
+      <button id="btnCrear">Crear evento</button>
 
       <div id="estado"></div>
 
@@ -292,115 +242,187 @@
 
 <script>
 
+  /*
+   * ==========================================
+   * CONFIGURACIÓN
+   * ==========================================
+   * Si cambias de implementación en Apps Script,
+   * esta es la única línea que debes actualizar.
+   */
   const URL_APPS_SCRIPT =
     "https://script.google.com/macros/s/AKfycbzq5DsVjAo3iuENvsCpI7KpaBi7W1PoXEvk6PePB0m367auHQzxCiLaVoUUhlBNPu6L/exec";
+
+  // Espera máxima por cada respuesta del servidor.
+  const TIMEOUT_MS = 20000;
+
+  // Invitados por petición (la lista viaja en la URL).
+  const TAMANO_LOTE = 25;
+
+  // Cada cuánto se refresca el evento actual.
+  const REFRESCO_MS = 60000;
+
+  const MENSAJE_NO_AUTORIZADO = "Acceso no autorizado.";
+
   let claveAdmin = "";
+  let intervalo = null;
 
-  function iniciarSesion() {
+  const $ = id => document.getElementById(id);
 
-  const input = document.getElementById("claveAdminInput");
-  const boton = document.getElementById("btnAcceder");
-  const mensaje = document.getElementById("mensajeAcceso");
 
-  const clave = input.value.trim();
+  /*
+   * ==========================================
+   * COMUNICACIÓN CON APPS SCRIPT (JSONP)
+   * ==========================================
+   */
+  function llamarBackend(parametros, callback) {
 
-  if (!clave) {
-    mensaje.textContent = "Debes ingresar una contraseña.";
-    return;
+    const nombreCallback =
+      "cb_" + Date.now() + "_" + Math.floor(Math.random() * 1e6);
+
+    const script = document.createElement("script");
+
+    let terminado = false;
+    let temporizador = null;
+
+    function terminar(datos) {
+
+      if (terminado) return;
+
+      terminado = true;
+
+      clearTimeout(temporizador);
+
+      // Si la respuesta llega tarde, que no cause errores.
+      window[nombreCallback] = function () {};
+
+      script.remove();
+
+      callback(datos);
+    }
+
+    window[nombreCallback] = terminar;
+
+    temporizador = setTimeout(function () {
+      terminar({
+        ok: false,
+        mensaje: "El servidor tardó demasiado en responder."
+      });
+    }, TIMEOUT_MS);
+
+    script.onerror = function () {
+      terminar({
+        ok: false,
+        mensaje: "No se pudo comunicar con el servidor."
+      });
+    };
+
+    const query = new URLSearchParams(
+      Object.assign({ clave: claveAdmin }, parametros)
+    );
+
+    query.append("callback", nombreCallback);
+
+    script.src = URL_APPS_SCRIPT + "?" + query.toString();
+
+    document.body.appendChild(script);
   }
 
-  boton.disabled = true;
-  boton.textContent = "Verificando...";
-  mensaje.textContent = "";
 
-  claveAdmin = clave;
+  function llamarBackendPromesa(parametros) {
 
-  // Hacer una petición que requiera autenticación
-  llamarBackend(
-    { accion: "obtenerEventoActualAdmin" },
-    function(datos) {
+    return new Promise(function (resolve) {
+      llamarBackend(parametros, resolve);
+    });
+  }
 
-      if (
-        datos &&
-        datos.ok === false &&
-        datos.mensaje === "Acceso no autorizado."
-      ) {
 
-        claveAdmin = "";
+  /*
+   * ==========================================
+   * ACCESO
+   * ==========================================
+   */
+  function iniciarSesion() {
+
+    const input = $("claveAdminInput");
+    const boton = $("btnAcceder");
+    const mensaje = $("mensajeAcceso");
+
+    const clave = input.value.trim();
+
+    if (!clave) {
+      mensaje.textContent = "Debes ingresar una contraseña.";
+      return;
+    }
+
+    boton.disabled = true;
+    boton.textContent = "Verificando...";
+    mensaje.textContent = "";
+
+    claveAdmin = clave;
+
+    llamarBackend(
+      { accion: "obtenerEventoActualAdmin" },
+      function (datos) {
 
         boton.disabled = false;
         boton.textContent = "Acceder";
 
-        mensaje.textContent = "Contraseña incorrecta.";
+        // Solo se entra si el servidor confirma explícitamente.
+        if (!datos || datos.ok !== true) {
 
-        input.value = "";
-        input.focus();
+          claveAdmin = "";
 
-        return;
+          if (datos && datos.mensaje === MENSAJE_NO_AUTORIZADO) {
+            mensaje.textContent = "Contraseña incorrecta.";
+          } else {
+            mensaje.textContent =
+              (datos && datos.mensaje) ||
+              "No se pudo verificar el acceso.";
+          }
+
+          input.value = "";
+          input.focus();
+
+          return;
+        }
+
+        $("pantallaAcceso").style.display = "none";
+
+        mostrarEventoActual(datos);
+
+        if (!intervalo) {
+          intervalo = setInterval(cargarEventoActual, REFRESCO_MS);
+        }
       }
-
-      // Acceso correcto
-      document.getElementById("pantallaAcceso").style.display = "none";
-
-      boton.disabled = false;
-      boton.textContent = "Acceder";
-
-      cargarEventoActual();
-    }
-  );
-}
-
-  /*
-   * Comunicación con Apps Script mediante JSONP
-   */
-  function llamarBackend(parametros, callback) {
-
-  const nombreCallback = "respuesta_" + Date.now();
-
-  window[nombreCallback] = function(datos) {
-    callback(datos);
-    delete window[nombreCallback];
-    script.remove();
-  };
-
-  const query = new URLSearchParams();
-
-  for (const clave in parametros) {
-    query.append(clave, parametros[clave]);
+    );
   }
 
-  // Agregar la clave de administrador
-  query.append("clave", claveAdmin);
 
-  query.append("callback", nombreCallback);
+  function cerrarSesion(mensaje) {
 
-  const script = document.createElement("script");
+    claveAdmin = "";
 
-  script.src =
-    URL_APPS_SCRIPT + "?" + query.toString();
+    if (intervalo) {
+      clearInterval(intervalo);
+      intervalo = null;
+    }
 
-  script.onerror = function() {
+    $("claveAdminInput").value = "";
+    $("mensajeAcceso").textContent =
+      mensaje || "La sesión terminó. Ingresa de nuevo.";
 
-    callback({
-      ok: false,
-      mensaje: "No se pudo comunicar con el servidor."
-    });
-
-    delete window[nombreCallback];
-    script.remove();
-  };
-
-  document.body.appendChild(script);
-}
+    $("pantallaAcceso").style.display = "flex";
+  }
 
 
   /*
-   * Mostrar estado
+   * ==========================================
+   * MENSAJES
+   * ==========================================
    */
   function mostrarEstado(mensaje, error = false) {
 
-    const elemento =
-      document.getElementById("estado");
+    const elemento = $("estado");
 
     elemento.style.display = "block";
 
@@ -415,549 +437,344 @@
 
 
   /*
-   * Obtener evento actual
+   * ==========================================
+   * EVENTO ACTUAL
+   * ==========================================
    */
+  function mostrarEventoActual(datos) {
+
+    const contenedor = $("eventoActual");
+
+    contenedor.replaceChildren();
+
+    function linea(texto) {
+      contenedor.appendChild(document.createTextNode(texto));
+      contenedor.appendChild(document.createElement("br"));
+    }
+
+    if (!datos || !datos.ok) {
+
+      const span = document.createElement("span");
+      span.className = "sin-evento";
+      span.textContent = "Error al consultar el evento.";
+      contenedor.appendChild(span);
+
+      return;
+    }
+
+    if (!datos.evento) {
+
+      const span = document.createElement("span");
+      span.className = "sin-evento";
+      span.textContent = "No hay ningún evento vigente.";
+      contenedor.appendChild(span);
+
+      return;
+    }
+
+    const evento = datos.evento;
+
+    const nombre = document.createElement("strong");
+    nombre.textContent = evento.nombre;
+
+    contenedor.appendChild(nombre);
+    contenedor.appendChild(document.createElement("br"));
+    contenedor.appendChild(document.createElement("br"));
+
+    linea("Estado: " + evento.estado);
+    linea("Inicia: " + evento.fechaInicio + " a las " + evento.horaInicio);
+    linea("Finaliza el: " + evento.fechaFin);
+    linea("Hora de finalización: " + evento.horaFin);
+  }
+
+
   function cargarEventoActual() {
 
     llamarBackend(
-      {
-        accion: "obtenerEventoActualAdmin"
-      },
+      { accion: "obtenerEventoActualAdmin" },
+      function (datos) {
 
-      function(datos) {
-
-        const contenedor =
-          document.getElementById("eventoActual");
-
-
-        if (!datos.ok) {
-
-          contenedor.innerHTML =
-            "<span class='sin-evento'>" +
-            "Error al consultar el evento." +
-            "</span>";
-
+        if (datos && datos.mensaje === MENSAJE_NO_AUTORIZADO) {
+          cerrarSesion();
           return;
         }
 
-
-        if (!datos.evento) {
-
-          contenedor.innerHTML =
-            "<span class='sin-evento'>" +
-            "No hay ningún evento vigente." +
-            "</span>";
-
-          return;
-        }
-
-
-        const evento = datos.evento;
-
-
-        contenedor.innerHTML =
-  "<strong>" +
-  evento.nombre +
-  "</strong><br><br>" +
-
-  "Finaliza el: " +
-  evento.fechaFin +
-  "<br>" +
-
-  "Hora de finalización: " +
-  evento.horaFin;
+        mostrarEventoActual(datos);
       }
     );
   }
 
 
   /*
-   * Crear evento
+   * ==========================================
+   * CREAR EVENTO
+   * ==========================================
    */
+  function limpiarFormulario() {
+
+    [
+      "nombreEvento",
+      "fechaInicio",
+      "fechaFin",
+      "horaInicio",
+      "horaFin",
+      "archivoInvitados"
+    ].forEach(function (id) {
+      $(id).value = "";
+    });
+  }
+
+
   async function crearEvento() {
 
-  const nombre =
-    document.getElementById("nombreEvento")
-      .value.trim();
+    const nombre = $("nombreEvento").value.trim();
+    const fechaInicio = $("fechaInicio").value;
+    const fechaFin = $("fechaFin").value;
+    const horaInicio = $("horaInicio").value;
+    const horaFin = $("horaFin").value;
+    const archivo = $("archivoInvitados").files[0];
 
-  const fechaInicio =
-    document.getElementById("fechaInicio")
-      .value;
+    if (
+      !nombre ||
+      !fechaInicio ||
+      !fechaFin ||
+      !horaInicio ||
+      !horaFin
+    ) {
+      mostrarEstado("Completa todos los campos.", true);
+      return;
+    }
 
-  const fechaFin =
-    document.getElementById("fechaFin")
-      .value;
+    if (!archivo) {
+      mostrarEstado("Selecciona el archivo de invitados.", true);
+      return;
+    }
 
-  const horaInicio =
-    document.getElementById("horaInicio")
-      .value;
-
-  const horaFin =
-    document.getElementById("horaFin")
-      .value;
-
-  const archivo =
-    document.getElementById("archivoInvitados")
-      .files[0];
-
-
-  if (
-    !nombre ||
-    !fechaInicio ||
-    !fechaFin ||
-    !horaInicio ||
-    !horaFin
-  ) {
-
-    mostrarEstado(
-      "Completa todos los campos.",
-      true
-    );
-
-    return;
-  }
-
-
-  if (!archivo) {
-
-    mostrarEstado(
-      "Selecciona el archivo de invitados.",
-      true
-    );
-
-    return;
-  }
-
-
-  const confirmar =
-    confirm(
+    const confirmar = confirm(
       "¿Estás seguro/a de que deseas crear este evento?\n\n" +
       "El evento y la lista de invitados serán registrados."
     );
 
-  if (!confirmar) {
-    return;
-  }
-
-
-  const btn =
-    document.getElementById("btnCrear");
-
-  btn.disabled = true;
-
-  btn.textContent =
-    "Creando evento...";
-
-
-  try {
-
-    /*
-     * ==========================================
-     * 1. LEER ARCHIVO
-     * ==========================================
-     */
-
-    const invitados =
-      await leerArchivoInvitados(archivo);
-
-
-    /*
-     * ==========================================
-     * 2. VALIDAR LISTA
-     * ==========================================
-     */
-
-    if (invitados.length === 0) {
-
-      throw new Error(
-        "El archivo no contiene invitados válidos."
-      );
-
+    if (!confirmar) {
+      return;
     }
 
+    const btn = $("btnCrear");
 
-    mostrarEstado(
-      "Creando evento y registrando invitados..."
-    );
+    btn.disabled = true;
+    btn.textContent = "Creando evento...";
 
+    try {
 
-    /*
-     * ==========================================
-     * 3. CREAR EVENTO
-     * ==========================================
-     */
+      // 1. Leer y validar el archivo ANTES de crear nada.
+      const invitados = await leerArchivoInvitados(archivo);
 
-    llamarBackend(
-      {
+      if (invitados.length === 0) {
+        throw new Error("El archivo no contiene invitados válidos.");
+      }
+
+      // 2. Crear el evento.
+      mostrarEstado("Creando evento...");
+
+      const creado = await llamarBackendPromesa({
         accion: "crearEvento",
         nombre: nombre,
         fechaInicio: fechaInicio,
         fechaFin: fechaFin,
         horaInicio: horaInicio,
         horaFin: horaFin
-      },
+      });
 
-      async function(datos) {
+      if (!creado.ok) {
 
-        if (!datos.ok) {
-
-          btn.disabled = false;
-
-          btn.textContent =
-            "Crear evento";
-
-          mostrarEstado(
-            datos.mensaje,
-            true
-          );
-
-          return;
+        if (creado.mensaje === MENSAJE_NO_AUTORIZADO) {
+          cerrarSesion();
         }
 
+        throw new Error(creado.mensaje);
+      }
 
-        const idEvento =
-          datos.id;
+      // 3. Subir invitados y avisar que la carga terminó.
+      try {
 
-
-        /*
-         * ==========================================
-         * 4. CARGAR INVITADOS POR LOTES
-         * ==========================================
-         */
-
-        try {
-
-          await cargarInvitadosPorLotes(
-            idEvento,
-            invitados
-          );
-
-
-          /*
-           * ======================================
-           * 5. TERMINADO
-           * ======================================
-           */
+        await cargarInvitadosPorLotes(creado.id, invitados);
 
         const cierre = await llamarBackendPromesa({
-       accion: "finalizarCarga",
-       idEvento: idEvento,
-       total: invitados.length
-     });
-     if (!cierre.ok) throw new Error(cierre.mensaje);
+          accion: "finalizarCarga",
+          idEvento: creado.id,
+          total: invitados.length
+        });
 
-     mostrarEstado(
-  "Evento creado y " +
-  invitados.length +
-  " invitados registrados. "
-);
-
-
-          /*
-           * Limpiar formulario
-           */
-
-          document.getElementById(
-            "nombreEvento"
-          ).value = "";
-
-          document.getElementById(
-            "fechaInicio"
-          ).value = "";
-
-          document.getElementById(
-            "fechaFin"
-          ).value = "";
-
-          document.getElementById(
-            "horaInicio"
-          ).value = "";
-
-          document.getElementById(
-            "horaFin"
-          ).value = "";
-
-          document.getElementById(
-            "archivoInvitados"
-          ).value = "";
-
-
-          btn.disabled = false;
-
-          btn.textContent =
-            "Crear evento";
-
-
-          cargarEventoActual();
-
-
-        } catch (error) {
-
-          btn.disabled = false;
-
-          btn.textContent =
-            "Crear evento";
-
-          mostrarEstado(
-            "El evento fue creado, pero hubo un problema al cargar la lista: " +
-            error.message,
-            true
-          );
-
+        if (!cierre.ok) {
+          throw new Error(cierre.mensaje);
         }
 
+      } catch (error) {
+
+        mostrarEstado(
+          "El evento " + creado.id + " fue creado, pero hubo un " +
+          "problema con la lista de invitados: " + error.message,
+          true
+        );
+
+        cargarEventoActual();
+
+        return;
       }
-    );
 
-  } catch (error) {
+      mostrarEstado(
+        "Evento creado y " + invitados.length +
+        " invitados registrados. Los QR se generan en segundo plano."
+      );
 
-    btn.disabled = false;
+      limpiarFormulario();
 
-    btn.textContent =
-      "Crear evento";
+      cargarEventoActual();
 
-    mostrarEstado(
-      error.message,
-      true
-    );
+    } catch (error) {
+
+      mostrarEstado(error.message, true);
+
+    } finally {
+
+      btn.disabled = false;
+      btn.textContent = "Crear evento";
+    }
   }
-}
+
+
+  /*
+   * ==========================================
+   * ARCHIVO DE INVITADOS
+   * ==========================================
+   */
+  function normalizarColumna(valor) {
+
+    return String(valor || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+
+  function correoValido(correo) {
+
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+  }
+
 
   async function leerArchivoInvitados(archivo) {
 
-  const datos =
-    await archivo.arrayBuffer();
+    const datos = await archivo.arrayBuffer();
 
-  const libro =
-    XLSX.read(
-      datos,
-      {
-        type: "array"
-      }
-    );
-
-  const nombreHoja =
-    libro.SheetNames[0];
-
-  const hoja =
-    libro.Sheets[nombreHoja];
-
-  const filas =
-    XLSX.utils.sheet_to_json(
-      hoja,
-      {
-        defval: ""
-      }
-    );
-
-
-  if (filas.length === 0) {
-
-    throw new Error(
-      "El archivo está vacío."
-    );
-
-  }
-
-
-  /*
-   * Buscar columnas ignorando mayúsculas,
-   * minúsculas y espacios.
-   */
-
-  const primeraFila =
-    filas[0];
-
-  const columnas =
-    Object.keys(primeraFila);
-
-
-  const columnaNombre =
-    columnas.find(
-      columna =>
-        normalizarColumna(columna) === "nombre"
-    );
-
-  const columnaCorreo =
-    columnas.find(
-      columna =>
-        normalizarColumna(columna) === "correo"
-    );
-
-
-  if (!columnaNombre || !columnaCorreo) {
-
-    throw new Error(
-      "El archivo debe contener las columnas Nombre y Correo."
-    );
-
-  }
-
-
-  const resultado = [];
-
-  const correosVistos =
-    new Set();
-
-
-  filas.forEach((fila, indice) => {
-
-    const nombre =
-      String(
-        fila[columnaNombre] || ""
-      ).trim();
-
-    const correo =
-      String(
-        fila[columnaCorreo] || ""
-      )
-      .trim()
-      .toLowerCase();
-
-
-    /*
-     * Ignorar filas completamente vacías
-     */
-
-    if (!nombre && !correo) {
-      return;
-    }
-
-
-    if (!nombre || !correo) {
-
-      throw new Error(
-        "La fila " +
-        (indice + 2) +
-        " tiene Nombre o Correo vacío."
-      );
-
-    }
-
-
-    if (!correoValido(correo)) {
-
-      throw new Error(
-        "El correo de la fila " +
-        (indice + 2) +
-        " no tiene un formato válido: " +
-        correo
-      );
-
-    }
-
-
-    /*if (correosVistos.has(correo)) {
-
-      throw new Error(
-        "El correo aparece duplicado en el archivo: " +
-        correo
-      );
-
-    }
-
-
-    correosVistos.add(correo);*/
-
-
-    resultado.push({
-      nombre: nombre,
-      correo: correo
+    // codepage 65001 = UTF-8 (evita dañar acentos en archivos CSV).
+    const libro = XLSX.read(datos, {
+      type: "array",
+      codepage: 65001
     });
 
-  });
+    const hoja = libro.Sheets[libro.SheetNames[0]];
+
+    const filas = XLSX.utils.sheet_to_json(hoja, { defval: "" });
+
+    if (filas.length === 0) {
+      throw new Error("El archivo está vacío.");
+    }
+
+    // Buscar columnas ignorando mayúsculas y acentos.
+    const columnas = Object.keys(filas[0]);
+
+    const columnaNombre = columnas.find(function (columna) {
+      return normalizarColumna(columna) === "nombre";
+    });
+
+    const columnaCorreo = columnas.find(function (columna) {
+      return normalizarColumna(columna) === "correo";
+    });
+
+    if (!columnaNombre || !columnaCorreo) {
+      throw new Error(
+        "El archivo debe contener las columnas Nombre y Correo."
+      );
+    }
+
+    const resultado = [];
+
+    filas.forEach(function (fila, indice) {
+
+      const nombre = String(fila[columnaNombre] || "").trim();
+
+      const correo =
+        String(fila[columnaCorreo] || "").trim().toLowerCase();
+
+      // Ignorar filas completamente vacías.
+      if (!nombre && !correo) {
+        return;
+      }
+
+      if (!nombre || !correo) {
+        throw new Error(
+          "La fila " + (indice + 2) + " tiene Nombre o Correo vacío."
+        );
+      }
+
+      if (!correoValido(correo)) {
+        throw new Error(
+          "El correo de la fila " + (indice + 2) +
+          " no tiene un formato válido: " + correo
+        );
+      }
+
+      resultado.push({ nombre: nombre, correo: correo });
+    });
+
+    return resultado;
+  }
 
 
-  return resultado;
-}
+  async function cargarInvitadosPorLotes(idEvento, invitados) {
 
+    for (let inicio = 0; inicio < invitados.length; inicio += TAMANO_LOTE) {
 
-function normalizarColumna(valor) {
-
-  return String(valor || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-
-function correoValido(correo) {
-
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    .test(correo);
-
-}
-
-
-async function cargarInvitadosPorLotes(
-  idEvento,
-  invitados
-) {
-
-  /*
-   * 50 invitados por petición.
-   *
-   * Esto evita enviar 800 registros
-   * en una sola URL.
-   */
-
-  const TAMANO_LOTE = 25;
-
-
-  for (
-    let inicio = 0;
-    inicio < invitados.length;
-    inicio += TAMANO_LOTE
-  ) {
-
-    const lote =
-      invitados.slice(
-        inicio,
-        inicio + TAMANO_LOTE
+      mostrarEstado(
+        "Registrando invitados: " +
+        Math.min(inicio + TAMANO_LOTE, invitados.length) +
+        " de " + invitados.length + "..."
       );
 
+      const lote = invitados.slice(inicio, inicio + TAMANO_LOTE);
 
-    const resultado =
-      await llamarBackendPromesa({
+      const resultado = await llamarBackendPromesa({
         accion: "cargarInvitados",
         idEvento: idEvento,
         datos: JSON.stringify(lote)
       });
 
-
-    if (!resultado.ok) {
-
-      throw new Error(
-        resultado.mensaje ||
-        "No se pudo cargar un lote de invitados."
-      );
-
+      if (!resultado.ok) {
+        throw new Error(
+          resultado.mensaje ||
+          "No se pudo cargar un lote de invitados."
+        );
+      }
     }
   }
-}
 
 
-function llamarBackendPromesa(parametros) {
-
-  return new Promise(
-    function(resolve) {
-
-      llamarBackend(
-        parametros,
-        function(datos) {
-          resolve(datos);
-        }
-      );
-
-    }
-  );
-}
-  
   /*
-   * Cargar información al abrir la página
+   * ==========================================
+   * EVENTOS DE LA PÁGINA
+   * ==========================================
    */
- 
+  $("btnAcceder").addEventListener("click", iniciarSesion);
+
+  $("claveAdminInput").addEventListener("keydown", function (evento) {
+    if (evento.key === "Enter") {
+      iniciarSesion();
+    }
+  });
+
+  $("btnCrear").addEventListener("click", crearEvento);
 
 </script>
 
