@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diseño de invitación</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #222;
+    }
+
+    .contenedor {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    h1 { text-align: center; }
+
+    .tarjeta {
+      background: white;
+      padding: 20px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 14px 0 6px;
+    }
+
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    input[type="range"] { width: 100%; }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #eee;
+      touch-action: none;
+      cursor: move;
+    }
+
+    .datos {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin: 12px 0 6px;
+      font-size: 16px;
+    }
+
+    small { color: #666; line-height: 1.4; }
+
+    #msg { color: #721c24; margin-top: 10px; }
+  </style>
+</head>
+
+<body>
+  <div class="contenedor">
+
+    <h1>Diseño de invitación</h1>
+
+    <div class="tarjeta">
+
+      <label for="archivo">Imagen de la invitación (PNG o JPG)</label>
+      <input type="file" id="archivo" accept="image/png,image/jpeg">
+
+      <label for="codigo">Código de prueba para la vista previa</label>
+      <input type="text" id="codigo" value="ABCD2345">
+
+      <label for="tam">Tamaño del QR: <span id="tamTxt"></span></label>
+      <input type="range" id="tam" min="3" max="40" step="0.5" value="18">
+
+      <label>
+        <input type="checkbox" id="final"> Ver resultado final (sin marco)
+      </label>
+
+      <div id="msg"></div>
+    </div>
+
+    <div class="tarjeta">
+      <canvas id="lienzo" width="700" height="400"></canvas>
+
+      <div class="datos">
+        <span>X: <b id="vx">-</b></span>
+        <span>Y: <b id="vy">-</b></span>
+        <span>Tamaño: <b id="vt">-</b></span>
+      </div>
+
+      <small>
+        Arrastra el recuadro hasta el espacio que dejó el diseñador.
+        Los valores son porcentajes de la imagen, así funcionan con
+        cualquier resolución.
+      </small>
+    </div>
+
+  </div>
+
+<script>
+
+  // Se intenta con la primera fuente y, si falla, con la segunda.
+  const FUENTES_QR = [
+    "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"
+  ];
+
+  const $ = id => document.getElementById(id);
+  const lienzo = $("lienzo");
+  const ctx = lienzo.getContext("2d");
+
+  let imagen = null;
+
+  // x, y = esquina superior izquierda (fracción de la imagen)
+  // tam  = lado del QR (fracción del ANCHO de la imagen)
+  const qr = { x: 0.7, y: 0.7, tam: 0.18 };
+
+  let arrastrando = false;
+  let desfase = { x: 0, y: 0 };
+
+
+  function cargarLibreriaQR() {
+
+    return new Promise(function (resolve, reject) {
+
+      if (window.qrcode) {
+        resolve();
+        return;
+      }
+
+      (function intentar(i) {
+
+        if (i >= FUENTES_QR.length) {
+          reject(new Error("No se pudo cargar la librería de QR."));
+          return;
+        }
+
+        const script = document.createElement("script");
+
+        script.src = FUENTES_QR[i];
+
+        script.onload = function () {
+          if (window.qrcode) {
+            resolve();
+          } else {
+            script.remove();
+            intentar(i + 1);
+          }
+        };
+
+        script.onerror = function () {
+          script.remove();
+          intentar(i + 1);
+        };
+
+        document.head.appendChild(script);
+
+      })(0);
+    });
+  }
+
+
+  // Dibuja un QR dentro del cuadro (x, y, lado), con fondo blanco
+  // y un margen de 2 módulos para que se pueda leer.
+  function dibujarQR(texto, x, y, lado) {
+
+    const codigo = window.qrcode(0, "M");
+
+    codigo.addData(texto);
+    codigo.make();
+
+    const n = codigo.getModuleCount();
+    const margen = 2;
+    const modulo = lado / (n + margen * 2);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(x, y, lado, lado);
+
+    ctx.fillStyle = "#000000";
+
+    for (let fila = 0; fila < n; fila++) {
+      for (let col = 0; col < n; col++) {
+
+        if (codigo.isDark(fila, col)) {
+          ctx.fillRect(
+            x + (col + margen) * modulo,
+            y + (fila + margen) * modulo,
+            Math.ceil(modulo),
+            Math.ceil(modulo)
+          );
+        }
+      }
+    }
+  }
+
+
+  // Mantiene el QR dentro de la imagen.
+  function ajustar() {
+
+    const alto = qr.tam * lienzo.width / lienzo.height;
+
+    qr.x = Math.min(Math.max(qr.x, 0), 1 - qr.tam);
+    qr.y = Math.min(Math.max(qr.y, 0), 1 - alto);
+  }
+
+
+  function dibujar() {
+
+    if (!imagen) return;
+
+    $("msg").textContent = "";
+
+    ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+    ctx.drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+
+    const lado = qr.tam * lienzo.width;
+    const x = qr.x * lienzo.width;
+    const y = qr.y * lienzo.height;
+
+    try {
+      dibujarQR($("codigo").value || "PRUEBA", x, y, lado);
+    } catch (error) {
+      $("msg").textContent = error.message;
+    }
+
+    if (!$("final").checked) {
+
+      ctx.strokeStyle = "#e91e63";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(x, y, lado, lado);
+      ctx.setLineDash([]);
+    }
+
+    $("vx").textContent = (qr.x * 100).toFixed(1) + "%";
+    $("vy").textContent = (qr.y * 100).toFixed(1) + "%";
+    $("vt").textContent = (qr.tam * 100).toFixed(1) + "%";
+  }
+
+
+  function posicionPuntero(evento) {
+
+    const r = lienzo.getBoundingClientRect();
+
+    return {
+      px: (evento.clientX - r.left) / r.width,
+      py: (evento.clientY - r.top) / r.height
+    };
+  }
+
+
+  lienzo.addEventListener("pointerdown", function (evento) {
+
+    if (!imagen) return;
+
+    const p = posicionPuntero(evento);
+    const alto = qr.tam * lienzo.width / lienzo.height;
+
+    const dentro =
+      p.px >= qr.x && p.px <= qr.x + qr.tam &&
+      p.py >= qr.y && p.py <= qr.y + alto;
+
+    if (dentro) {
+      arrastrando = true;
+      desfase = { x: p.px - qr.x, y: p.py - qr.y };
+      lienzo.setPointerCapture(evento.pointerId);
+    }
+  });
+
+  lienzo.addEventListener("pointermove", function (evento) {
+
+    if (!arrastrando) return;
+
+    const p = posicionPuntero(evento);
+
+    qr.x = p.px - desfase.x;
+    qr.y = p.py - desfase.y;
+
+    ajustar();
+    dibujar();
+  });
+
+  ["pointerup", "pointercancel"].forEach(function (nombre) {
+    lienzo.addEventListener(nombre, function () {
+      arrastrando = false;
+    });
+  });
+
+
+  $("tam").addEventListener("input", function () {
+
+    qr.tam = Number($("tam").value) / 100;
+
+    $("tamTxt").textContent = $("tam").value + "%";
+
+    ajustar();
+    dibujar();
+  });
+
+  $("codigo").addEventListener("input", dibujar);
+  $("final").addEventListener("change", dibujar);
+
+
+  $("archivo").addEventListener("change", function () {
+
+    const archivo = $("archivo").files[0];
+
+    if (!archivo) return;
+
+    const url = URL.createObjectURL(archivo);
+    const img = new Image();
+
+    img.onload = function () {
+
+      imagen = img;
+
+      // El lienzo se limita a 800 px de ancho para trabajar rápido.
+      lienzo.width = Math.min(img.naturalWidth, 800);
+      lienzo.height = Math.round(
+        lienzo.width * img.naturalHeight / img.naturalWidth
+      );
+
+      URL.revokeObjectURL(url);
+
+      ajustar();
+      dibujar();
+    };
+
+    img.onerror = function () {
+      $("msg").textContent = "No se pudo abrir la imagen.";
+    };
+
+    img.src = url;
+  });
+
+
+  $("tamTxt").textContent = $("tam").value + "%";
+
+  cargarLibreriaQR()
+    .then(dibujar)
+    .catch(function (error) {
+      $("msg").textContent = error.message;
+    });
+
+</script>
+</body>
+</html>
