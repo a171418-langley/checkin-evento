@@ -371,49 +371,83 @@
     }
   }
 
-  function dibujarNombre() {
-    const x = nombreConfig.x * lienzo.width;
-    const y = nombreConfig.y * lienzo.height;
-    const ancho = nombreConfig.ancho * lienzo.width;
-    const alto = nombreConfig.alto * lienzo.height;
+  
+function dibujarNombre() {
+  const x = nombreConfig.x * lienzo.width;
+  const y = nombreConfig.y * lienzo.height;
+  const ancho = nombreConfig.ancho * lienzo.width;
+  const alto = nombreConfig.alto * lienzo.height;
 
-    const texto = $("nombre").value || "NOMBRE DEL INVITADO";
-    const alineacion = nombreConfig.alineacion;
+  const texto = ($("nombre").value || "NOMBRE DEL INVITADO").trim();
+  const alineacion = nombreConfig.alineacion;
 
-    ctx.save();
+  ctx.save();
 
-    // Recorta el texto al área configurada para evitar que
-    // invada otros elementos de la invitación.
-    ctx.beginPath();
-    ctx.rect(x, y, ancho, alto);
-    ctx.clip();
+  // El texto nunca podrá salir del área configurada.
+  ctx.beginPath();
+  ctx.rect(x, y, ancho, alto);
+  ctx.clip();
 
-    let tamFuente = nombreConfig.fuenteTam * lienzo.width;
-    const margenTexto = Math.min(8, ancho * 0.03);
-    const espacioTexto = Math.max(1, ancho - margenTexto * 2);
+  const tamFuente = nombreConfig.fuenteTam * lienzo.width;
+  const margenTexto = Math.min(8, ancho * 0.03);
+  const espacioTexto = Math.max(1, ancho - margenTexto * 2);
 
-    ctx.font = tamFuente + 'px "' + nombreConfig.fuente + '"';
+  ctx.font = tamFuente + 'px "' + nombreConfig.fuente + '"';
+  ctx.fillStyle = nombreConfig.color;
+  ctx.textAlign = alineacion;
+  ctx.textBaseline = "middle";
 
-    // Reduce la letra si un nombre largo no cabe en el área.
-    const anchoTexto = ctx.measureText(texto).width;
-    if (anchoTexto > espacioTexto && anchoTexto > 0) {
-      tamFuente *= espacioTexto / anchoTexto;
+  // Divide el nombre en palabras y crea renglones.
+  const palabras = texto.split(/\s+/).filter(Boolean);
+  const renglones = [];
+  let renglonActual = "";
+
+  palabras.forEach(function(palabra) {
+    const prueba = renglonActual
+      ? renglonActual + " " + palabra
+      : palabra;
+
+    if (
+      renglonActual &&
+      ctx.measureText(prueba).width > espacioTexto
+    ) {
+      renglones.push(renglonActual);
+      renglonActual = palabra;
+    } else {
+      renglonActual = prueba;
     }
+  });
 
-    ctx.font = Math.max(1, tamFuente) + 'px "' +
-      nombreConfig.fuente + '"';
-
-    ctx.fillStyle = nombreConfig.color;
-    ctx.textAlign = alineacion;
-    ctx.textBaseline = "middle";
-
-    let posicionX = x + ancho / 2;
-    if (alineacion === "left") posicionX = x + margenTexto;
-    if (alineacion === "right") posicionX = x + ancho - margenTexto;
-
-    ctx.fillText(texto, posicionX, y + alto / 2);
-    ctx.restore();
+  if (renglonActual) {
+    renglones.push(renglonActual);
   }
+
+  // Calcula el alto de cada renglón conservando el tamaño de letra.
+  const altoRenglon = tamFuente * 1.2;
+  const altoTotal = renglones.length * altoRenglon;
+  const inicioY = y + (alto - altoTotal) / 2 + altoRenglon / 2;
+
+  let posicionX = x + ancho / 2;
+
+  if (alineacion === "left") {
+    posicionX = x + margenTexto;
+  }
+
+  if (alineacion === "right") {
+    posicionX = x + ancho - margenTexto;
+  }
+
+  renglones.forEach(function(renglon, indice) {
+    ctx.fillText(
+      renglon,
+      posicionX,
+      inicioY + indice * altoRenglon
+    );
+  });
+
+  ctx.restore();
+}
+
 
   function dibujarMarcos() {
     if ($("final").checked) return;
