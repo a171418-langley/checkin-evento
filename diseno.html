@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -16,7 +17,7 @@
     }
 
     .contenedor {
-      max-width: 800px;
+      max-width: 950px;
       margin: 30px auto;
       padding: 20px;
     }
@@ -31,6 +32,12 @@
       box-shadow: 0 3px 12px rgba(0,0,0,0.08);
     }
 
+    .controles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 0 18px;
+    }
+
     label {
       display: block;
       font-weight: bold;
@@ -38,17 +45,29 @@
     }
 
     input[type="text"],
-    input[type="file"] {
+    input[type="file"],
+    select {
       width: 100%;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 8px;
       font-size: 16px;
+      background: white;
     }
 
     input[type="range"] { width: 100%; }
 
+    input[type="color"] {
+      width: 100%;
+      height: 42px;
+      padding: 3px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white;
+    }
+
     canvas {
+      display: block;
       width: 100%;
       height: auto;
       border: 1px solid #ddd;
@@ -60,62 +79,164 @@
 
     .datos {
       display: flex;
-      gap: 20px;
+      gap: 18px;
       flex-wrap: wrap;
       margin: 12px 0 6px;
-      font-size: 16px;
+      font-size: 14px;
     }
 
-    small { color: #666; line-height: 1.4; }
+    .nota {
+      display: block;
+      color: #666;
+      line-height: 1.5;
+      margin-top: 10px;
+    }
 
-    #msg { color: #721c24; margin-top: 10px; }
+    #msg {
+      color: #721c24;
+      margin-top: 12px;
+      white-space: pre-wrap;
+    }
+
+    .seccion {
+      border-top: 1px solid #eee;
+      margin-top: 20px;
+      padding-top: 8px;
+    }
+
+    .ayuda {
+      background: #f5f7fa;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .contenedor { padding: 12px; margin: 12px auto; }
+      .tarjeta { padding: 14px; }
+    }
   </style>
 </head>
 
 <body>
-  <div class="contenedor">
+<div class="contenedor">
 
-    <h1>Diseño de invitación</h1>
+  <h1>Diseño de invitación</h1>
 
-    <div class="tarjeta">
+  <div class="tarjeta">
+    <label for="archivo">Imagen base de la invitación (PNG)</label>
+    <input type="file" id="archivo" accept="image/png">
 
-      <label for="archivo">Imagen de la invitación (PNG o JPG)</label>
-      <input type="file" id="archivo" accept="image/png,image/jpeg">
-
-      <label for="codigo">Código de prueba para la vista previa</label>
-      <input type="text" id="codigo" value="ABCD2345">
-
-      <label for="tam">Tamaño del QR: <span id="tamTxt"></span></label>
-      <input type="range" id="tam" min="3" max="40" step="0.5" value="18">
-
-      <label>
-        <input type="checkbox" id="final"> Ver resultado final (sin marco)
-      </label>
-
-      <div id="msg"></div>
-    </div>
-
-    <div class="tarjeta">
-      <canvas id="lienzo" width="700" height="400"></canvas>
-
-      <div class="datos">
-        <span>X: <b id="vx">-</b></span>
-        <span>Y: <b id="vy">-</b></span>
-        <span>Tamaño: <b id="vt">-</b></span>
+    <div class="controles">
+      <div>
+        <label for="codigo">Código QR de prueba</label>
+        <input type="text" id="codigo" value="ABCD2345">
       </div>
 
-      <small>
-        Arrastra el recuadro hasta el espacio que dejó el diseñador.
-        Los valores son porcentajes de la imagen, así funcionan con
-        cualquier resolución.
-      </small>
+      <div>
+        <label for="nombre">Nombre de prueba</label>
+        <input type="text" id="nombre" value="NOMBRE DEL INVITADO"
+               maxlength="150">
+      </div>
     </div>
 
+    <label>
+      <input type="checkbox" id="final">
+      Ver resultado final (sin marcos de edición)
+    </label>
+
+    <div id="msg" role="status" aria-live="polite"></div>
   </div>
 
-<script>
+  <div class="tarjeta">
+    <h2>Vista previa</h2>
 
-  // Se intenta con la primera fuente y, si falla, con la segunda.
+    <canvas id="lienzo" width="700" height="400"></canvas>
+
+    <div class="datos">
+      <span>QR X: <b id="qrX">-</b></span>
+      <span>QR Y: <b id="qrY">-</b></span>
+      <span>QR tamaño: <b id="qrTamTxt">-</b></span>
+    </div>
+
+    <div class="datos">
+      <span>Nombre X: <b id="nombreX">-</b></span>
+      <span>Nombre Y: <b id="nombreY">-</b></span>
+      <span>Ancho: <b id="nombreAnchoTxt">-</b></span>
+    </div>
+
+    <small class="nota">
+      Arrastra el QR o el recuadro del nombre para moverlos.
+      Los valores se calculan como porcentajes de la imagen.
+    </small>
+
+    <div class="ayuda">
+      El marco rosa corresponde al QR y el marco azul al área del nombre.
+      Los marcos solo son ayudas de edición: no aparecerán en la imagen final.
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Configuración del QR</h2>
+
+    <label for="tam">
+      Tamaño del QR: <span id="tamTxt">18%</span>
+    </label>
+    <input type="range" id="tam" min="3" max="40" step="0.5" value="18">
+
+    <div class="seccion">
+      <h2>Configuración del nombre</h2>
+
+      <div class="controles">
+        <div>
+          <label for="fuente">Tipo de letra</label>
+          <select id="fuente">
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Trebuchet MS">Trebuchet MS</option>
+            <option value="Courier New">Courier New</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="colorNombre">Color del nombre</label>
+          <input type="color" id="colorNombre" value="#222222">
+        </div>
+
+        <div>
+          <label for="alineacion">Alineación</label>
+          <select id="alineacion">
+            <option value="center">Centrado</option>
+            <option value="left">Izquierda</option>
+            <option value="right">Derecha</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="fuenteTam">
+        Tamaño de letra: <span id="fuenteTamTxt">4%</span>
+      </label>
+      <input type="range" id="fuenteTam" min="1" max="10"
+             step="0.25" value="4">
+
+      <label for="anchoNombre">
+        Ancho del área del nombre:
+        <span id="anchoNombreValor">60%</span>
+      </label>
+      <input type="range" id="anchoNombre" min="10" max="95"
+             step="1" value="60">
+    </div>
+  </div>
+
+</div>
+
+<script>
+  "use strict";
+
   const FUENTES_QR = [
     "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js",
     "https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"
@@ -126,36 +247,48 @@
   const ctx = lienzo.getContext("2d");
 
   let imagen = null;
-
-  // x, y = esquina superior izquierda (fracción de la imagen)
-  // tam  = lado del QR (fracción del ANCHO de la imagen)
-  const qr = { x: 0.7, y: 0.7, tam: 0.18 };
-
   let arrastrando = false;
+  let elementoActivo = null;
   let desfase = { x: 0, y: 0 };
+  let urlImagenActual = null;
 
+  // Coordenadas relativas a la imagen.
+  // x y tam usan el ancho; y se expresa respecto al alto.
+  const qr = {
+    x: 0.70,
+    y: 0.70,
+    tam: 0.18
+  };
+
+  // El área del nombre es independiente del QR.
+  const nombreConfig = {
+    x: 0.20,
+    y: 0.45,
+    ancho: 0.60,
+    alto: 0.12,
+    fuenteTam: 0.04,
+    fuente: "Arial",
+    color: "#222222",
+    alineacion: "center"
+  };
 
   function cargarLibreriaQR() {
-
-    return new Promise(function (resolve, reject) {
-
+    return new Promise(function(resolve, reject) {
       if (window.qrcode) {
         resolve();
         return;
       }
 
-      (function intentar(i) {
-
+      function intentar(i) {
         if (i >= FUENTES_QR.length) {
-          reject(new Error("No se pudo cargar la librería de QR."));
+          reject(new Error("No se pudo cargar la librería QR. Comprueba la conexión."));
           return;
         }
 
         const script = document.createElement("script");
-
         script.src = FUENTES_QR[i];
 
-        script.onload = function () {
+        script.onload = function() {
           if (window.qrcode) {
             resolve();
           } else {
@@ -164,25 +297,53 @@
           }
         };
 
-        script.onerror = function () {
+        script.onerror = function() {
           script.remove();
           intentar(i + 1);
         };
 
         document.head.appendChild(script);
+      }
 
-      })(0);
+      intentar(0);
     });
   }
 
+  function ajustarQR() {
+    const altoRelativo = qr.tam * lienzo.width / lienzo.height;
 
-  // Dibuja un QR dentro del cuadro (x, y, lado), con fondo blanco
-  // y un margen de 2 módulos para que se pueda leer.
+    qr.x = Math.max(0, Math.min(qr.x, 1 - qr.tam));
+    qr.y = Math.max(0, Math.min(qr.y, 1 - altoRelativo));
+  }
+
+  function ajustarNombre() {
+    nombreConfig.ancho = Math.max(
+      0.10, Math.min(nombreConfig.ancho, 0.95)
+    );
+
+    nombreConfig.x = Math.max(
+      0, Math.min(nombreConfig.x, 1 - nombreConfig.ancho)
+    );
+
+    nombreConfig.y = Math.max(
+      0, Math.min(nombreConfig.y, 1 - nombreConfig.alto)
+    );
+  }
+
   function dibujarQR(texto, x, y, lado) {
+    if (!window.qrcode) {
+      throw new Error("La librería QR todavía no está disponible.");
+    }
+
+    const contenido = String(texto || "").trim();
+    if (!contenido) {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x, y, lado, lado);
+      return;
+    }
 
     const codigo = window.qrcode(0, "M");
-
-    codigo.addData(texto);
+    codigo.addData(contenido);
     codigo.make();
 
     const n = codigo.getModuleCount();
@@ -191,16 +352,17 @@
 
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(x, y, lado, lado);
-
     ctx.fillStyle = "#000000";
 
     for (let fila = 0; fila < n; fila++) {
       for (let col = 0; col < n; col++) {
-
         if (codigo.isDark(fila, col)) {
+          const xModulo = x + (col + margen) * modulo;
+          const yModulo = y + (fila + margen) * modulo;
+
           ctx.fillRect(
-            x + (col + margen) * modulo,
-            y + (fila + margen) * modulo,
+            xModulo,
+            yModulo,
             Math.ceil(modulo),
             Math.ceil(modulo)
           );
@@ -209,155 +371,290 @@
     }
   }
 
+  function dibujarNombre() {
+    const x = nombreConfig.x * lienzo.width;
+    const y = nombreConfig.y * lienzo.height;
+    const ancho = nombreConfig.ancho * lienzo.width;
+    const alto = nombreConfig.alto * lienzo.height;
 
-  // Mantiene el QR dentro de la imagen.
-  function ajustar() {
+    const texto = $("nombre").value || "NOMBRE DEL INVITADO";
+    const alineacion = nombreConfig.alineacion;
 
-    const alto = qr.tam * lienzo.width / lienzo.height;
+    ctx.save();
 
-    qr.x = Math.min(Math.max(qr.x, 0), 1 - qr.tam);
-    qr.y = Math.min(Math.max(qr.y, 0), 1 - alto);
+    // Recorta el texto al área configurada para evitar que
+    // invada otros elementos de la invitación.
+    ctx.beginPath();
+    ctx.rect(x, y, ancho, alto);
+    ctx.clip();
+
+    let tamFuente = nombreConfig.fuenteTam * lienzo.width;
+    const margenTexto = Math.min(8, ancho * 0.03);
+    const espacioTexto = Math.max(1, ancho - margenTexto * 2);
+
+    ctx.font = tamFuente + 'px "' + nombreConfig.fuente + '"';
+
+    // Reduce la letra si un nombre largo no cabe en el área.
+    const anchoTexto = ctx.measureText(texto).width;
+    if (anchoTexto > espacioTexto && anchoTexto > 0) {
+      tamFuente *= espacioTexto / anchoTexto;
+    }
+
+    ctx.font = Math.max(1, tamFuente) + 'px "' +
+      nombreConfig.fuente + '"';
+
+    ctx.fillStyle = nombreConfig.color;
+    ctx.textAlign = alineacion;
+    ctx.textBaseline = "middle";
+
+    let posicionX = x + ancho / 2;
+    if (alineacion === "left") posicionX = x + margenTexto;
+    if (alineacion === "right") posicionX = x + ancho - margenTexto;
+
+    ctx.fillText(texto, posicionX, y + alto / 2);
+    ctx.restore();
   }
 
+  function dibujarMarcos() {
+    if ($("final").checked) return;
+
+    const xQR = qr.x * lienzo.width;
+    const yQR = qr.y * lienzo.height;
+    const ladoQR = qr.tam * lienzo.width;
+
+    ctx.save();
+    ctx.lineWidth = Math.max(1, lienzo.width / 350);
+    ctx.setLineDash([6, 4]);
+
+    ctx.strokeStyle = "#e91e63";
+    ctx.strokeRect(xQR, yQR, ladoQR, ladoQR);
+
+    ctx.strokeStyle = "#1976d2";
+    ctx.strokeRect(
+      nombreConfig.x * lienzo.width,
+      nombreConfig.y * lienzo.height,
+      nombreConfig.ancho * lienzo.width,
+      nombreConfig.alto * lienzo.height
+    );
+
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function actualizarDatos() {
+    $("qrX").textContent = (qr.x * 100).toFixed(1) + "%";
+    $("qrY").textContent = (qr.y * 100).toFixed(1) + "%";
+    $("qrTamTxt").textContent = (qr.tam * 100).toFixed(1) + "%";
+
+    $("nombreX").textContent =
+      (nombreConfig.x * 100).toFixed(1) + "%";
+
+    $("nombreY").textContent =
+      (nombreConfig.y * 100).toFixed(1) + "%";
+
+    $("nombreAnchoTxt").textContent =
+      (nombreConfig.ancho * 100).toFixed(1) + "%";
+  }
 
   function dibujar() {
-
     if (!imagen) return;
-
-    $("msg").textContent = "";
 
     ctx.clearRect(0, 0, lienzo.width, lienzo.height);
     ctx.drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
 
-    const lado = qr.tam * lienzo.width;
-    const x = qr.x * lienzo.width;
-    const y = qr.y * lienzo.height;
-
     try {
-      dibujarQR($("codigo").value || "PRUEBA", x, y, lado);
+      const ladoQR = qr.tam * lienzo.width;
+
+      dibujarQR(
+        $("codigo").value,
+        qr.x * lienzo.width,
+        qr.y * lienzo.height,
+        ladoQR
+      );
+
+      dibujarNombre();
+      dibujarMarcos();
+
+      $("msg").textContent = "";
     } catch (error) {
       $("msg").textContent = error.message;
     }
 
-    if (!$("final").checked) {
-
-      ctx.strokeStyle = "#e91e63";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 4]);
-      ctx.strokeRect(x, y, lado, lado);
-      ctx.setLineDash([]);
-    }
-
-    $("vx").textContent = (qr.x * 100).toFixed(1) + "%";
-    $("vy").textContent = (qr.y * 100).toFixed(1) + "%";
-    $("vt").textContent = (qr.tam * 100).toFixed(1) + "%";
+    actualizarDatos();
   }
 
-
   function posicionPuntero(evento) {
-
     const r = lienzo.getBoundingClientRect();
 
     return {
-      px: (evento.clientX - r.left) / r.width,
-      py: (evento.clientY - r.top) / r.height
+      x: (evento.clientX - r.left) / r.width,
+      y: (evento.clientY - r.top) / r.height
     };
   }
 
+  function puntoDentroNombre(p) {
+    return p.x >= nombreConfig.x &&
+      p.x <= nombreConfig.x + nombreConfig.ancho &&
+      p.y >= nombreConfig.y &&
+      p.y <= nombreConfig.y + nombreConfig.alto;
+  }
 
-  lienzo.addEventListener("pointerdown", function (evento) {
+  function puntoDentroQR(p) {
+    const alto = qr.tam * lienzo.width / lienzo.height;
 
+    return p.x >= qr.x &&
+      p.x <= qr.x + qr.tam &&
+      p.y >= qr.y &&
+      p.y <= qr.y + alto;
+  }
+
+  lienzo.addEventListener("pointerdown", function(evento) {
     if (!imagen) return;
 
     const p = posicionPuntero(evento);
-    const alto = qr.tam * lienzo.width / lienzo.height;
 
-    const dentro =
-      p.px >= qr.x && p.px <= qr.x + qr.tam &&
-      p.py >= qr.y && p.py <= qr.y + alto;
-
-    if (dentro) {
-      arrastrando = true;
-      desfase = { x: p.px - qr.x, y: p.py - qr.y };
-      lienzo.setPointerCapture(evento.pointerId);
+    // Si las áreas se superponen, el nombre tiene prioridad.
+    if (puntoDentroNombre(p)) {
+      elementoActivo = "nombre";
+      desfase = {
+        x: p.x - nombreConfig.x,
+        y: p.y - nombreConfig.y
+      };
+    } else if (puntoDentroQR(p)) {
+      elementoActivo = "qr";
+      desfase = {
+        x: p.x - qr.x,
+        y: p.y - qr.y
+      };
+    } else {
+      elementoActivo = null;
+      return;
     }
+
+    arrastrando = true;
+    lienzo.setPointerCapture(evento.pointerId);
+    evento.preventDefault();
   });
 
-  lienzo.addEventListener("pointermove", function (evento) {
-
-    if (!arrastrando) return;
+  lienzo.addEventListener("pointermove", function(evento) {
+    if (!arrastrando || !elementoActivo) return;
 
     const p = posicionPuntero(evento);
 
-    qr.x = p.px - desfase.x;
-    qr.y = p.py - desfase.y;
+    if (elementoActivo === "qr") {
+      qr.x = p.x - desfase.x;
+      qr.y = p.y - desfase.y;
+      ajustarQR();
+    } else {
+      nombreConfig.x = p.x - desfase.x;
+      nombreConfig.y = p.y - desfase.y;
+      ajustarNombre();
+    }
 
-    ajustar();
     dibujar();
   });
 
-  ["pointerup", "pointercancel"].forEach(function (nombre) {
-    lienzo.addEventListener(nombre, function () {
-      arrastrando = false;
-    });
-  });
+  function terminarArrastre() {
+    arrastrando = false;
+    elementoActivo = null;
+  }
 
+  lienzo.addEventListener("pointerup", terminarArrastre);
+  lienzo.addEventListener("pointercancel", terminarArrastre);
+  lienzo.addEventListener("lostpointercapture", terminarArrastre);
 
-  $("tam").addEventListener("input", function () {
-
+  $("tam").addEventListener("input", function() {
     qr.tam = Number($("tam").value) / 100;
-
     $("tamTxt").textContent = $("tam").value + "%";
-
-    ajustar();
+    ajustarQR();
     dibujar();
   });
 
+  $("nombre").addEventListener("input", dibujar);
   $("codigo").addEventListener("input", dibujar);
   $("final").addEventListener("change", dibujar);
 
+  $("fuente").addEventListener("change", function() {
+    nombreConfig.fuente = $("fuente").value;
+    dibujar();
+  });
 
-  $("archivo").addEventListener("change", function () {
+  $("colorNombre").addEventListener("input", function() {
+    nombreConfig.color = $("colorNombre").value;
+    dibujar();
+  });
 
+  $("alineacion").addEventListener("change", function() {
+    nombreConfig.alineacion = $("alineacion").value;
+    dibujar();
+  });
+
+  $("fuenteTam").addEventListener("input", function() {
+    nombreConfig.fuenteTam = Number($("fuenteTam").value) / 100;
+    $("fuenteTamTxt").textContent = $("fuenteTam").value + "%";
+    dibujar();
+  });
+
+  $("anchoNombre").addEventListener("input", function() {
+    nombreConfig.ancho = Number($("anchoNombre").value) / 100;
+    $("anchoNombreValor").textContent = $("anchoNombre").value + "%";
+    ajustarNombre();
+    dibujar();
+  });
+
+  $("archivo").addEventListener("change", function() {
     const archivo = $("archivo").files[0];
-
     if (!archivo) return;
 
-    const url = URL.createObjectURL(archivo);
+    if (archivo.type !== "image/png") {
+      $("msg").textContent = "Selecciona una imagen PNG.";
+      $("archivo").value = "";
+      return;
+    }
+
+    if (urlImagenActual) {
+      URL.revokeObjectURL(urlImagenActual);
+    }
+
+    urlImagenActual = URL.createObjectURL(archivo);
     const img = new Image();
 
-    img.onload = function () {
-
+    img.onload = function() {
       imagen = img;
 
-      // El lienzo se limita a 800 px de ancho para trabajar rápido.
+      // Se limita el ancho de la vista previa.
+      // La imagen original se conservará aparte al conectar
+      // el guardado de la plantilla.
       lienzo.width = Math.min(img.naturalWidth, 800);
-      lienzo.height = Math.round(
-        lienzo.width * img.naturalHeight / img.naturalWidth
+      lienzo.height = Math.max(
+        1,
+        Math.round(
+          lienzo.width * img.naturalHeight / img.naturalWidth
+        )
       );
 
-      URL.revokeObjectURL(url);
-
-      ajustar();
+      ajustarQR();
+      ajustarNombre();
       dibujar();
     };
 
-    img.onerror = function () {
-      $("msg").textContent = "No se pudo abrir la imagen.";
+    img.onerror = function() {
+      $("msg").textContent = "No se pudo abrir la imagen PNG.";
+      imagen = null;
     };
 
-    img.src = url;
+    img.src = urlImagenActual;
   });
 
-
   $("tamTxt").textContent = $("tam").value + "%";
+  $("fuenteTamTxt").textContent = $("fuenteTam").value + "%";
+  $("anchoNombreValor").textContent = $("anchoNombre").value + "%";
 
   cargarLibreriaQR()
     .then(dibujar)
-    .catch(function (error) {
+    .catch(function(error) {
       $("msg").textContent = error.message;
     });
-
 </script>
 </body>
 </html>
