@@ -232,6 +232,14 @@
     </div>
   </div>
 
+     <div class="tarjeta">
+     <h2>Guardar diseño</h2>
+     <label for="claveAdmin">Contraseña de administrador</label>
+     <input type="password" id="claveAdmin" autocomplete="off">
+     <button id="btnGuardar" type="button" style="width:100%;margin-top:14px;padding:14px;border:none;border-radius:8px;background:#222;color:#fff;font-size:16px;font-weight:bold;cursor:pointer">Guardar en el evento actual</button>
+     <div id="msgGuardar" role="status" style="margin-top:12px"></div>
+   </div>
+  
 </div>
 
 <script>
@@ -690,5 +698,8 @@ function dibujarNombre() {
       $("msg").textContent = error.message;
     });
 </script>
+
+  <script src="guardar.js"></script>
+  
 </body>
 </html>
