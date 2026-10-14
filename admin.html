@@ -255,9 +255,6 @@
   // Espera máxima por cada respuesta del servidor.
   const TIMEOUT_MS = 20000;
 
-  // Invitados por petición (la lista viaja en la URL).
-  const TAMANO_LOTE = 25;
-
   // Cada cuánto se refresca el evento actual.
   const REFRESCO_MS = 60000;
 
@@ -325,14 +322,6 @@
     script.src = URL_APPS_SCRIPT + "?" + query.toString();
 
     document.body.appendChild(script);
-  }
-
-
-  function llamarBackendPromesa(parametros) {
-
-    return new Promise(function (resolve) {
-      llamarBackend(parametros, resolve);
-    });
   }
 
 
@@ -573,58 +562,37 @@
         throw new Error("El archivo no contiene invitados válidos.");
       }
 
-      // 2. Crear el evento.
-      mostrarEstado("Creando evento...");
+      // 2. Crear el evento y registrar TODOS los invitados en una
+      //    sola petición. El servidor deja listo todo lo demás.
+      mostrarEstado(
+        "Creando evento y registrando " + invitados.length +
+        " invitados..."
+      );
 
-      const creado = await llamarBackendPromesa({
-        accion: "crearEvento",
+      const resultado = await enviarEventoCompleto({
+        accion: "crearEventoConInvitados",
+        clave: claveAdmin,
         nombre: nombre,
         fechaInicio: fechaInicio,
         fechaFin: fechaFin,
         horaInicio: horaInicio,
-        horaFin: horaFin
+        horaFin: horaFin,
+        invitados: invitados
       });
 
-      if (!creado.ok) {
+      if (!resultado.ok) {
 
-        if (creado.mensaje === MENSAJE_NO_AUTORIZADO) {
+        if (resultado.mensaje === MENSAJE_NO_AUTORIZADO) {
           cerrarSesion();
         }
 
-        throw new Error(creado.mensaje);
-      }
-
-      // 3. Subir invitados y avisar que la carga terminó.
-      try {
-
-        await cargarInvitadosPorLotes(creado.id, invitados);
-
-        const cierre = await llamarBackendPromesa({
-          accion: "finalizarCarga",
-          idEvento: creado.id,
-          total: invitados.length
-        });
-
-        if (!cierre.ok) {
-          throw new Error(cierre.mensaje);
-        }
-
-      } catch (error) {
-
-        mostrarEstado(
-          "El evento " + creado.id + " fue creado, pero hubo un " +
-          "problema con la lista de invitados: " + error.message,
-          true
-        );
-
-        cargarEventoActual();
-
-        return;
+        throw new Error(resultado.mensaje);
       }
 
       mostrarEstado(
-        "Evento creado y " + invitados.length +
-        " invitados registrados. Los QR se generan en segundo plano."
+        "Evento " + resultado.id + " creado con " + resultado.invitados +
+        " invitados. Ya puedes cerrar esta página: los QR se generan " +
+        "en segundo plano."
       );
 
       limpiarFormulario();
@@ -733,30 +701,38 @@
   }
 
 
-  async function cargarInvitadosPorLotes(idEvento, invitados) {
+  // Una sola petición POST (texto simple, sin cabeceras especiales).
+  async function enviarEventoCompleto(cuerpo) {
 
-    for (let inicio = 0; inicio < invitados.length; inicio += TAMANO_LOTE) {
+    const controlador = new AbortController();
 
-      mostrarEstado(
-        "Registrando invitados: " +
-        Math.min(inicio + TAMANO_LOTE, invitados.length) +
-        " de " + invitados.length + "..."
-      );
+    const temporizador = setTimeout(function () {
+      controlador.abort();
+    }, 90000);
 
-      const lote = invitados.slice(inicio, inicio + TAMANO_LOTE);
+    try {
 
-      const resultado = await llamarBackendPromesa({
-        accion: "cargarInvitados",
-        idEvento: idEvento,
-        datos: JSON.stringify(lote)
+      const respuesta = await fetch(URL_APPS_SCRIPT, {
+        method: "POST",
+        body: JSON.stringify(cuerpo),
+        signal: controlador.signal
       });
 
-      if (!resultado.ok) {
-        throw new Error(
-          resultado.mensaje ||
-          "No se pudo cargar un lote de invitados."
-        );
-      }
+      return await respuesta.json();
+
+    } catch (error) {
+
+      return {
+        ok: false,
+        mensaje: error.name === "AbortError"
+          ? "El servidor tardó demasiado. Revisa en la hoja Eventos si " +
+            "el evento se creó antes de volver a intentarlo."
+          : "No se pudo comunicar con el servidor."
+      };
+
+    } finally {
+
+      clearTimeout(temporizador);
     }
   }
 
