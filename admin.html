@@ -141,6 +141,62 @@
       text-align: center;
       color: #721c24;
     }
+
+    .resumen {
+      color: #555;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .lista-eventos {
+      max-height: 440px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .lista-eventos h3 {
+      margin: 14px 0 8px;
+      font-size: 15px;
+      color: #444;
+    }
+
+    details.evento {
+      border: 1px solid #e3e6ea;
+      border-left-width: 5px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      background: #fafbfc;
+    }
+
+    details.evento.activo { border-left-color: #2e9e5b; }
+    details.evento.programado { border-left-color: #3b7ddd; }
+
+    details.evento summary {
+      cursor: pointer;
+      padding: 12px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .insignia {
+      font-size: 12px;
+      font-weight: bold;
+      padding: 3px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .insignia.activo { background: #d4edda; color: #155724; }
+    .insignia.programado { background: #e2ecf8; color: #1a4a7a; }
+
+    .detalle-evento {
+      padding: 0 12px 12px;
+      line-height: 1.7;
+      font-size: 14px;
+    }
   </style>
 </head>
 
@@ -169,12 +225,14 @@
 
     <h1>Administración de eventos</h1>
 
-    <!-- EVENTO ACTUAL -->
+    <!-- EVENTOS ACTIVOS Y PROGRAMADOS -->
     <div class="tarjeta">
 
-      <h2>Evento actual</h2>
+      <h2>Eventos activos y programados</h2>
 
-      <div id="eventoActual" class="info">
+      <div id="resumenEventos" class="resumen"></div>
+
+      <div id="eventosLista" class="lista-eventos">
         Cargando información...
       </div>
 
@@ -268,60 +326,45 @@
 
   /*
    * ==========================================
-   * COMUNICACIÓN CON APPS SCRIPT (JSONP)
+   * COMUNICACIÓN CON APPS SCRIPT (POST)
    * ==========================================
    */
-  function llamarBackend(parametros, callback) {
+  function llamarServidor(cuerpo, esperaMs) {
 
-    const nombreCallback =
-      "cb_" + Date.now() + "_" + Math.floor(Math.random() * 1e6);
+    return (async function () {
 
-    const script = document.createElement("script");
+      const controlador = new AbortController();
 
-    let terminado = false;
-    let temporizador = null;
+      const temporizador = setTimeout(function () {
+        controlador.abort();
+      }, esperaMs || TIMEOUT_MS);
 
-    function terminar(datos) {
+      try {
 
-      if (terminado) return;
+        const respuesta = await fetch(URL_APPS_SCRIPT, {
+          method: "POST",
+          body: JSON.stringify(cuerpo),
+          signal: controlador.signal
+        });
 
-      terminado = true;
+        return await respuesta.json();
 
-      clearTimeout(temporizador);
+      } catch (error) {
 
-      // Si la respuesta llega tarde, que no cause errores.
-      window[nombreCallback] = function () {};
+        return {
+          ok: false,
+          timeout: error.name === "AbortError",
+          mensaje: error.name === "AbortError"
+            ? "El servidor tardó demasiado en responder."
+            : "No se pudo comunicar con el servidor."
+        };
 
-      script.remove();
+      } finally {
 
-      callback(datos);
-    }
+        clearTimeout(temporizador);
+      }
 
-    window[nombreCallback] = terminar;
-
-    temporizador = setTimeout(function () {
-      terminar({
-        ok: false,
-        mensaje: "El servidor tardó demasiado en responder."
-      });
-    }, TIMEOUT_MS);
-
-    script.onerror = function () {
-      terminar({
-        ok: false,
-        mensaje: "No se pudo comunicar con el servidor."
-      });
-    };
-
-    const query = new URLSearchParams(
-      Object.assign({ clave: claveAdmin }, parametros)
-    );
-
-    query.append("callback", nombreCallback);
-
-    script.src = URL_APPS_SCRIPT + "?" + query.toString();
-
-    document.body.appendChild(script);
+    })();
   }
 
 
@@ -330,7 +373,7 @@
    * ACCESO
    * ==========================================
    */
-  function iniciarSesion() {
+  async function iniciarSesion() {
 
     const input = $("claveAdminInput");
     const boton = $("btnAcceder");
@@ -349,41 +392,37 @@
 
     claveAdmin = clave;
 
-    llamarBackend(
-      { accion: "obtenerEventoActualAdmin" },
-      function (datos) {
+    const datos = await llamarServidor({
+      accion: "listarEventos",
+      clave: clave
+    });
 
-        boton.disabled = false;
-        boton.textContent = "Acceder";
+    boton.disabled = false;
+    boton.textContent = "Acceder";
 
-        // Solo se entra si el servidor confirma explícitamente.
-        if (!datos || datos.ok !== true) {
+    // Solo se entra si el servidor confirma explícitamente.
+    if (!datos || datos.ok !== true) {
 
-          claveAdmin = "";
+      claveAdmin = "";
 
-          if (datos && datos.mensaje === MENSAJE_NO_AUTORIZADO) {
-            mensaje.textContent = "Contraseña incorrecta.";
-          } else {
-            mensaje.textContent =
-              (datos && datos.mensaje) ||
-              "No se pudo verificar el acceso.";
-          }
+      mensaje.textContent =
+        datos && datos.mensaje === MENSAJE_NO_AUTORIZADO
+          ? "Contraseña incorrecta."
+          : (datos && datos.mensaje) || "No se pudo verificar el acceso.";
 
-          input.value = "";
-          input.focus();
+      input.value = "";
+      input.focus();
 
-          return;
-        }
+      return;
+    }
 
-        $("pantallaAcceso").style.display = "none";
+    $("pantallaAcceso").style.display = "none";
 
-        mostrarEventoActual(datos);
+    mostrarEventos(datos);
 
-        if (!intervalo) {
-          intervalo = setInterval(cargarEventoActual, REFRESCO_MS);
-        }
-      }
-    );
+    if (!intervalo) {
+      intervalo = setInterval(consultarEventos, REFRESCO_MS);
+    }
   }
 
 
@@ -430,67 +469,145 @@
    * EVENTO ACTUAL
    * ==========================================
    */
-  function mostrarEventoActual(datos) {
+  // Eventos desplegados (se conservan al refrescar la lista).
+  const abiertos = new Set();
 
-    const contenedor = $("eventoActual");
 
-    contenedor.replaceChildren();
+  function elemento(etiqueta, texto, clase) {
 
-    function linea(texto) {
-      contenedor.appendChild(document.createTextNode(texto));
-      contenedor.appendChild(document.createElement("br"));
-    }
+    const nodo = document.createElement(etiqueta);
 
-    if (!datos || !datos.ok) {
+    if (texto !== undefined) nodo.textContent = texto;
+    if (clase) nodo.className = clase;
 
-      const span = document.createElement("span");
-      span.className = "sin-evento";
-      span.textContent = "Error al consultar el evento.";
-      contenedor.appendChild(span);
-
-      return;
-    }
-
-    if (!datos.evento) {
-
-      const span = document.createElement("span");
-      span.className = "sin-evento";
-      span.textContent = "No hay ningún evento vigente.";
-      contenedor.appendChild(span);
-
-      return;
-    }
-
-    const evento = datos.evento;
-
-    const nombre = document.createElement("strong");
-    nombre.textContent = evento.nombre;
-
-    contenedor.appendChild(nombre);
-    contenedor.appendChild(document.createElement("br"));
-    contenedor.appendChild(document.createElement("br"));
-
-    linea("Estado: " + evento.estado);
-    linea("Inicia: " + evento.fechaInicio + " a las " + evento.horaInicio);
-    linea("Finaliza el: " + evento.fechaFin);
-    linea("Hora de finalización: " + evento.horaFin);
+    return nodo;
   }
 
 
-  function cargarEventoActual() {
+  function tarjetaEvento(evento) {
 
-    llamarBackend(
-      { accion: "obtenerEventoActualAdmin" },
-      function (datos) {
+    const clase = evento.estado === "Activo" ? "activo" : "programado";
 
-        if (datos && datos.mensaje === MENSAJE_NO_AUTORIZADO) {
-          cerrarSesion();
-          return;
-        }
+    const detalle = elemento("details", undefined, "evento " + clase);
 
-        mostrarEventoActual(datos);
+    detalle.open = abiertos.has(evento.id);
+
+    detalle.addEventListener("toggle", function () {
+
+      if (detalle.open) {
+        abiertos.add(evento.id);
+      } else {
+        abiertos.delete(evento.id);
+      }
+    });
+
+    const resumen = elemento("summary");
+
+    resumen.appendChild(elemento("span", evento.nombre));
+    resumen.appendChild(elemento("span", evento.estado, "insignia " + clase));
+
+    const cuerpo = elemento("div", undefined, "detalle-evento");
+
+    [
+      "ID: " + evento.id,
+      "Inicia: " + evento.fechaInicio + " a las " + evento.horaInicio,
+      "Termina: " + evento.fechaFin + " a las " + evento.horaFin,
+      "Invitados: " + evento.invitados,
+      "Diseño: " + (
+        evento.tieneDiseno
+          ? "guardado"
+          : "pendiente (súbelo en la página de diseño)"
+      ),
+      "QR: " + (evento.estadoQR || "Pendiente") +
+        " (" + evento.qrListos + " de " + evento.invitados + ")",
+      "Invitaciones: " + (evento.estadoInvitaciones || "Pendiente") +
+        " (" + evento.enviados + " de " + evento.invitados + " enviadas)"
+    ].forEach(function (texto) {
+      cuerpo.appendChild(elemento("div", texto));
+    });
+
+    detalle.appendChild(resumen);
+    detalle.appendChild(cuerpo);
+
+    return detalle;
+  }
+
+
+  function mostrarEventos(datos) {
+
+    const lista = $("eventosLista");
+
+    lista.replaceChildren();
+
+    if (!datos || datos.ok !== true) {
+
+      lista.appendChild(
+        elemento("span", "No se pudo consultar los eventos.", "sin-evento")
+      );
+
+      return;
+    }
+
+    const eventos = datos.eventos || [];
+
+    const activos = eventos.filter(function (e) {
+      return e.estado === "Activo";
+    });
+
+    const programados = eventos.filter(function (e) {
+      return e.estado === "Programado";
+    });
+
+    $("resumenEventos").textContent =
+      activos.length + " activos de " + (datos.maximo || 3) +
+      " permitidos a la vez · " + programados.length + " programados";
+
+    if (eventos.length === 0) {
+
+      lista.appendChild(
+        elemento(
+          "span",
+          "No hay eventos activos ni programados.",
+          "sin-evento"
+        )
+      );
+
+      return;
+    }
+
+    [["Activos", activos], ["Programados", programados]].forEach(
+      function (grupo) {
+
+        if (grupo[1].length === 0) return;
+
+        lista.appendChild(elemento("h3", grupo[0]));
+
+        grupo[1].forEach(function (evento) {
+          lista.appendChild(tarjetaEvento(evento));
+        });
       }
     );
+  }
+
+
+  async function consultarEventos() {
+
+    if (!claveAdmin) return;
+
+    const datos = await llamarServidor({
+      accion: "listarEventos",
+      clave: claveAdmin
+    });
+
+    if (datos && datos.mensaje === MENSAJE_NO_AUTORIZADO) {
+      cerrarSesion();
+      return;
+    }
+
+    // Si falla la consulta, se conserva la lista que ya estaba.
+    if (datos && datos.ok === true) {
+      mostrarEventos(datos);
+    }
   }
 
 
@@ -597,7 +714,7 @@
 
       limpiarFormulario();
 
-      cargarEventoActual();
+      consultarEventos();
 
     } catch (error) {
 
@@ -702,38 +819,19 @@
 
 
   // Una sola petición POST (texto simple, sin cabeceras especiales).
-  async function enviarEventoCompleto(cuerpo) {
+  function enviarEventoCompleto(cuerpo) {
 
-    const controlador = new AbortController();
+    return llamarServidor(cuerpo, 90000).then(function (resultado) {
 
-    const temporizador = setTimeout(function () {
-      controlador.abort();
-    }, 90000);
+      if (resultado && resultado.timeout) {
 
-    try {
+        resultado.mensaje =
+          "El servidor tardó demasiado. Revisa en la lista si el evento " +
+          "se creó antes de volver a intentarlo.";
+      }
 
-      const respuesta = await fetch(URL_APPS_SCRIPT, {
-        method: "POST",
-        body: JSON.stringify(cuerpo),
-        signal: controlador.signal
-      });
-
-      return await respuesta.json();
-
-    } catch (error) {
-
-      return {
-        ok: false,
-        mensaje: error.name === "AbortError"
-          ? "El servidor tardó demasiado. Revisa en la hoja Eventos si " +
-            "el evento se creó antes de volver a intentarlo."
-          : "No se pudo comunicar con el servidor."
-      };
-
-    } finally {
-
-      clearTimeout(temporizador);
-    }
+      return resultado;
+    });
   }
 
 
