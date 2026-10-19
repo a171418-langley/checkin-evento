@@ -97,6 +97,7 @@
       display: none;
       text-align: center;
       line-height: 1.4;
+      white-space: pre-line;
     }
 
     .info {
@@ -867,10 +868,102 @@
         );
       }
 
-      resultado.push({ nombre: nombre, correo: correo });
+      resultado.push({ nombre: nombre, correo: correo, fila: indice + 2 });
     });
 
-    return resultado;
+    revisarErroresDeDedo(resultado);
+    revisarRepetidos(resultado);
+
+    return resultado.map(function (invitado) {
+      return { nombre: invitado.nombre, correo: invitado.correo };
+    });
+  }
+
+
+  // Dominios mal escritos frecuentes → dominio correcto.
+  const DOMINIOS_SOSPECHOSOS = {
+    "gamil.com": "gmail.com", "gmial.com": "gmail.com", "gmai.com": "gmail.com",
+    "gmal.com": "gmail.com", "gnail.com": "gmail.com", "gmaill.com": "gmail.com",
+    "gmail.co": "gmail.com", "gmail.cm": "gmail.com", "gmail.om": "gmail.com",
+    "gmail.con": "gmail.com", "gmail.comm": "gmail.com", "gmail.es": "gmail.com",
+    "hotmial.com": "hotmail.com", "hotmal.com": "hotmail.com", "hotmai.com": "hotmail.com",
+    "hotmil.com": "hotmail.com", "hotmail.co": "hotmail.com", "hotmail.con": "hotmail.com",
+    "outlok.com": "outlook.com", "outllok.com": "outlook.com", "outlook.co": "outlook.com",
+    "outlook.con": "outlook.com", "yaho.com": "yahoo.com", "yahoo.co": "yahoo.com",
+    "yahoo.con": "yahoo.com", "yhoo.com": "yahoo.com", "icloud.co": "icloud.com",
+    "icloud.con": "icloud.com"
+  };
+
+
+  /**
+   * Detiene la carga si hay correos con el dominio mal escrito
+   * (gamil.com, hotmial.com, terminados en .con...).
+   */
+  function revisarErroresDeDedo(invitados) {
+
+    const problemas = [];
+
+    invitados.forEach(function (invitado) {
+
+      const dominio = invitado.correo.split("@").pop();
+      const sugerencia = DOMINIOS_SOSPECHOSOS[dominio];
+
+      if (sugerencia) {
+        problemas.push(
+          "Fila " + invitado.fila + ": " + invitado.correo +
+          " (¿quisiste decir @" + sugerencia + "?)"
+        );
+      } else if (/\.con$/.test(dominio)) {
+        problemas.push(
+          "Fila " + invitado.fila + ": " + invitado.correo + " (¿termina en .com?)"
+        );
+      }
+    });
+
+    if (problemas.length > 0) {
+      throw new Error(
+        "Revisa estos correos, parecen mal escritos. Corrígelos en el " +
+        "archivo y vuelve a subirlo:\n" +
+        problemas.slice(0, 15).join("\n") +
+        (problemas.length > 15 ? "\n... y " + (problemas.length - 15) + " más." : "")
+      );
+    }
+  }
+
+
+  /**
+   * Si un correo aparece más de una vez, pide confirmación: cada
+   * fila recibe su propia invitación (con su propio QR).
+   */
+  function revisarRepetidos(invitados) {
+
+    const vistos = {};
+    const repetidos = [];
+
+    invitados.forEach(function (invitado) {
+
+      if (vistos[invitado.correo]) {
+        repetidos.push(
+          invitado.correo + " (filas " + vistos[invitado.correo] +
+          " y " + invitado.fila + ")"
+        );
+      } else {
+        vistos[invitado.correo] = invitado.fila;
+      }
+    });
+
+    if (repetidos.length === 0) return;
+
+    const seguir = confirm(
+      "Hay " + repetidos.length + " correo(s) repetido(s) en la lista:\n\n" +
+      repetidos.slice(0, 10).join("\n") +
+      (repetidos.length > 10 ? "\n..." : "") +
+      "\n\nCada fila recibirá su propia invitación. ¿Continuar de todos modos?"
+    );
+
+    if (!seguir) {
+      throw new Error("Carga cancelada. Corrige los correos repetidos y vuelve a intentarlo.");
+    }
   }
 
 
