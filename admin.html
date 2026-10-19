@@ -197,6 +197,19 @@
       line-height: 1.7;
       font-size: 14px;
     }
+
+    .progreso {
+      margin-top: 6px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: #e8f1fb;
+      color: #1a4a7a;
+    }
+
+    .progreso.atascado {
+      background: #fdecea;
+      color: #8a1c1c;
+    }
   </style>
 </head>
 
@@ -526,10 +539,53 @@
       cuerpo.appendChild(elemento("div", texto));
     });
 
+    // Avance de los procesos en segundo plano.
+    [
+      ["Generando QR", evento.procesoQR],
+      ["Enviando invitaciones", evento.procesoEnvio]
+    ].forEach(function (proceso) {
+
+      const info = proceso[1];
+
+      if (!info) return;
+
+      let texto = "⏳ " + proceso[0];
+
+      if (info.segundosSinActividad !== null) {
+        texto += " · última actividad hace " +
+          formatearEspera(info.segundosSinActividad);
+      }
+
+      if (info.porMinuto) {
+        texto += " · ≈ " + info.porMinuto + " por minuto · faltan ≈ " +
+          info.minutosRestantes + " min";
+      }
+
+      const linea = elemento("div", texto, "progreso");
+
+      // Más de 8 minutos sin actividad: algo se trabó. La revisión
+      // automática lo reactiva en los siguientes 5 minutos.
+      if (info.segundosSinActividad !== null &&
+          info.segundosSinActividad > 480) {
+        linea.className = "progreso atascado";
+        linea.textContent += " · ⚠️ sin avance, se reactivará en breve";
+      }
+
+      cuerpo.appendChild(linea);
+    });
+
     detalle.appendChild(resumen);
     detalle.appendChild(cuerpo);
 
     return detalle;
+  }
+
+
+  function formatearEspera(segundos) {
+
+    if (segundos < 60) return segundos + " s";
+
+    return Math.floor(segundos / 60) + " min " + (segundos % 60) + " s";
   }
 
 
