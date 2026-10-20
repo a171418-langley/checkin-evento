@@ -85,7 +85,16 @@
       overflow: hidden;
     }
 
-    #reader video { object-fit: cover; }
+    /* La cámara siempre en cuadro: el video llena el marco y lo que
+       sobra se recorta (no se deforma). */
+    #reader { position: relative; }
+
+    #reader video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover;
+      display: block;
+    }
 
     /* ---------- Resultado (talón del boleto) ---------- */
 
@@ -586,6 +595,8 @@
         { facingMode: "environment" },
         {
           fps: 10,
+          // Video cuadrado y zona de lectura cuadrada.
+          aspectRatio: 1.0,
           qrbox: function (ancho, alto) {
             const lado = Math.floor(Math.min(ancho, alto) * 0.7);
             return { width: lado, height: lado };
