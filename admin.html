@@ -3,213 +3,414 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración de invitaciones</title>
 
-  <title>Administración de eventos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
+    :root {
+      --tinta: #1d2a3a;
+      --tinta-suave: #5b6876;
+      --papel: #f3f5f2;
+      --blanco: #ffffff;
+      --linea: #d9dfe4;
+      --sello: #16697a;
+      --sello-claro: #e6f0f1;
+      --verde: #2f8f5b;
+      --verde-claro: #e8f3ec;
+      --ambar: #b7791f;
+      --ambar-claro: #faf1e1;
+      --ladrillo: #b4413c;
+      --ladrillo-claro: #f8e9e8;
+      --radio: 12px;
+      --fuente: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
     }
+
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      color: #222;
+      font-family: var(--fuente);
+      font-size: 16px;
+      line-height: 1.5;
+      background: var(--papel);
+      color: var(--tinta);
     }
 
     .contenedor {
-      max-width: 700px;
-      margin: 40px auto;
-      padding: 20px;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 28px 16px 48px;
     }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
+    /* ---------- Encabezado ---------- */
+
+    .encabezado {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
     }
 
-    .tarjeta {
-      background: white;
-      padding: 25px;
-      border-radius: 14px;
-      margin-bottom: 20px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    .encabezado h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.15;
     }
 
-    .tarjeta h2 {
-      margin-top: 0;
-      font-size: 20px;
+    .encabezado p {
+      margin: 4px 0 0;
+      color: var(--tinta-suave);
     }
 
-    .campo {
-      margin-bottom: 18px;
+    /* ---------- Botones y campos ---------- */
+
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 20px;
+      border: none;
+      border-radius: 10px;
+      background: var(--sello);
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .btn:hover { background: #125866; }
+    .btn:disabled { background: #9aa7b1; cursor: not-allowed; }
+
+    .btn-bloque { width: 100%; }
+
+    .btn-borde {
+      padding: 9px 14px;
+      border: 1px solid var(--linea);
+      border-radius: 10px;
+      background: var(--blanco);
+      color: var(--tinta);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .btn-borde:hover { border-color: var(--tinta-suave); }
+
+    button:focus-visible,
+    input:focus-visible,
+    summary:focus-visible,
+    a:focus-visible {
+      outline: 3px solid #f2c94c;
+      outline-offset: 2px;
     }
 
     label {
       display: block;
-      font-weight: bold;
-      margin-bottom: 7px;
+      font-weight: 700;
+      margin-bottom: 6px;
     }
 
-    input {
+    input[type="text"],
+    input[type="password"],
+    input[type="date"],
+    input[type="time"] {
       width: 100%;
       padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
+      border: 1px solid var(--linea);
+      border-radius: 10px;
+      font: inherit;
+      background: var(--blanco);
+      color: var(--tinta);
     }
 
-    small {
-      display: block;
+    input:focus { border-color: var(--sello); }
+
+    .campo { margin-bottom: 18px; }
+
+    .fila-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .ayuda {
+      font-size: 14px;
+      color: var(--tinta-suave);
       margin-top: 6px;
-      color: #666;
-      line-height: 1.4;
     }
 
-    button {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 8px;
-      background: #222;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
+    a { color: var(--sello); }
+
+    /* ---------- Secciones ---------- */
+
+    .seccion { margin-bottom: 36px; }
+
+    .seccion-titulo {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 4px;
     }
 
-    button:hover {
-      opacity: 0.9;
+    .seccion-titulo h2 {
+      margin: 0;
+      font-size: 22px;
     }
 
-    button:disabled {
-      background: #999;
-      cursor: not-allowed;
+    .resumen {
+      color: var(--tinta-suave);
+      font-size: 14px;
+      margin-bottom: 14px;
     }
 
-    #estado {
-      margin-top: 15px;
-      padding: 12px;
-      border-radius: 8px;
-      display: none;
+    .vacio {
+      padding: 22px;
+      border: 2px dashed var(--linea);
+      border-radius: var(--radio);
+      color: var(--tinta-suave);
       text-align: center;
-      line-height: 1.4;
+    }
+
+    .panel {
+      background: var(--blanco);
+      border: 1px solid var(--linea);
+      border-radius: var(--radio);
+      padding: 22px;
+    }
+
+    /* ---------- Boleto de evento ---------- */
+
+    .boleto {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 92px;
+      background: var(--blanco);
+      border: 1px solid var(--linea);
+      border-radius: var(--radio);
+      margin-bottom: 14px;
+    }
+
+    .boleto-cuerpo { padding: 18px 20px; min-width: 0; }
+
+    .boleto-nombre {
+      margin: 0 0 2px;
+      font-size: 20px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .boleto-fecha {
+      color: var(--tinta-suave);
+      font-size: 15px;
+      margin-bottom: 14px;
+    }
+
+    /* Talón con borde punteado y muescas, como un boleto. */
+    .boleto-talon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-left: 2px dashed var(--linea);
+      padding: 12px 6px;
+      text-align: center;
+    }
+
+    .boleto::before,
+    .boleto::after {
+      content: "";
+      position: absolute;
+      right: 82px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--papel);
+      border: 1px solid var(--linea);
+    }
+
+    .boleto::before { top: -11px; clip-path: inset(50% 0 0 0); }
+    .boleto::after { bottom: -11px; clip-path: inset(0 0 50% 0); }
+
+    .talon-dia {
+      font-size: 34px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .talon-mes {
+      font-size: 15px;
+      color: var(--tinta-suave);
+      margin-bottom: 8px;
+    }
+
+    .estado {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--sello-claro);
+      color: var(--sello);
+    }
+
+    .estado.activo { background: var(--verde-claro); color: var(--verde); }
+
+    /* Progreso de cada etapa */
+    .etapas {
+      display: grid;
+      gap: 10px;
+    }
+
+    .etapa {
+      display: grid;
+      grid-template-columns: 120px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+    }
+
+    .etapa-nombre { color: var(--tinta-suave); }
+
+    .barra {
+      height: 8px;
+      border-radius: 999px;
+      background: #e8ecef;
+      overflow: hidden;
+    }
+
+    .barra span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: var(--sello);
+      border-radius: 999px;
+      transition: width .4s ease;
+    }
+
+    .barra.completa span { background: var(--verde); }
+    .barra.problema span { background: var(--ladrillo); }
+
+    .etapa-valor { font-weight: 700; white-space: nowrap; }
+
+    .marca-ok { color: var(--verde); font-weight: 700; }
+    .marca-falta { color: var(--ambar); font-weight: 700; }
+
+    .aviso-evento {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--sello-claro);
+      color: var(--sello);
+    }
+
+    .aviso-evento.ok { background: var(--verde-claro); color: var(--verde); }
+    .aviso-evento.atencion { background: var(--ambar-claro); color: #8a5a12; }
+    .aviso-evento.problema { background: var(--ladrillo-claro); color: var(--ladrillo); }
+
+    /* ---------- Archivo de invitados ---------- */
+
+    .zona-archivo {
+      display: block;
+      padding: 20px;
+      border: 2px dashed var(--linea);
+      border-radius: var(--radio);
+      background: #fafbfa;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 400;
+      margin-bottom: 6px;
+    }
+
+    .zona-archivo:hover,
+    .zona-archivo.sobre { border-color: var(--sello); background: var(--sello-claro); }
+
+    .zona-archivo strong { display: block; font-size: 16px; }
+
+    .zona-archivo input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+
+    .zona-archivo:focus-within { outline: 3px solid #f2c94c; outline-offset: 2px; }
+
+    .archivo-estado { font-size: 14px; margin-top: 8px; min-height: 21px; }
+    .archivo-estado.ok { color: var(--verde); }
+    .archivo-estado.error { color: var(--ladrillo); }
+
+    details.nota {
+      font-size: 14px;
+      color: var(--tinta-suave);
+      margin: -6px 0 18px;
+    }
+
+    details.nota summary { cursor: pointer; color: var(--sello); }
+
+    /* ---------- Mensajes ---------- */
+
+    .mensaje {
+      display: none;
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
       white-space: pre-line;
+      font-size: 15px;
     }
 
-    .info {
-      line-height: 1.7;
-    }
+    .mensaje.ok { display: block; background: var(--verde-claro); color: #1f6b43; }
+    .mensaje.error { display: block; background: var(--ladrillo-claro); color: #8e2f2b; }
+    .mensaje.info { display: block; background: var(--sello-claro); color: var(--sello); }
 
-    .sin-evento {
-      color: #555;
-    }
+    /* ---------- Acceso ---------- */
 
     .pantalla-acceso {
       position: fixed;
       inset: 0;
-      background: #f4f6f8;
+      background: var(--papel);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 9999;
+      padding: 16px;
+      z-index: 10;
     }
 
-    .login {
-      width: 90%;
-      max-width: 400px;
-      background: white;
-      padding: 30px;
-      border-radius: 14px;
-      box-shadow: 0 3px 15px rgba(0,0,0,0.12);
+    .acceso {
+      width: 100%;
+      max-width: 380px;
+      background: var(--blanco);
+      border: 1px solid var(--linea);
+      border-radius: 16px;
+      padding: 28px;
     }
 
-    .login h2 {
-      margin-top: 0;
-      text-align: center;
-      margin-bottom: 25px;
+    .acceso h1 { margin: 0 0 4px; font-size: 26px; }
+    .acceso p { margin: 0 0 20px; color: var(--tinta-suave); }
+
+    #mensajeAcceso { margin-top: 12px; color: var(--ladrillo); min-height: 24px; }
+
+    @media (max-width: 560px) {
+      .fila-2 { grid-template-columns: 1fr; gap: 0; }
+      .etapa { grid-template-columns: 1fr auto; }
+      .etapa .barra { grid-column: 1 / -1; grid-row: 2; }
+      .etapa > span:empty { display: none; }
+      .encabezado h1 { font-size: 26px; }
     }
 
-    .login input {
-      margin-bottom: 15px;
-    }
-
-    #mensajeAcceso {
-      margin-top: 15px;
-      text-align: center;
-      color: #721c24;
-    }
-
-    .resumen {
-      color: #555;
-      margin-bottom: 12px;
-      font-size: 14px;
-    }
-
-    .lista-eventos {
-      max-height: 440px;
-      overflow-y: auto;
-      padding-right: 4px;
-    }
-
-    .lista-eventos h3 {
-      margin: 14px 0 8px;
-      font-size: 15px;
-      color: #444;
-    }
-
-    details.evento {
-      border: 1px solid #e3e6ea;
-      border-left-width: 5px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      background: #fafbfc;
-    }
-
-    details.evento.activo { border-left-color: #2e9e5b; }
-    details.evento.programado { border-left-color: #3b7ddd; }
-
-    details.evento summary {
-      cursor: pointer;
-      padding: 12px;
-      font-weight: bold;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .insignia {
-      font-size: 12px;
-      font-weight: bold;
-      padding: 3px 9px;
-      border-radius: 999px;
-      white-space: nowrap;
-    }
-
-    .insignia.activo { background: #d4edda; color: #155724; }
-    .insignia.programado { background: #e2ecf8; color: #1a4a7a; }
-
-    .detalle-evento {
-      padding: 0 12px 12px;
-      line-height: 1.7;
-      font-size: 14px;
-    }
-
-    .progreso {
-      margin-top: 6px;
-      padding: 6px 10px;
-      border-radius: 6px;
-      background: #e8f1fb;
-      color: #1a4a7a;
-    }
-
-    .progreso.atascado {
-      background: #fdecea;
-      color: #8a1c1c;
+    @media (prefers-reduced-motion: reduce) {
+      .barra span { transition: none; }
     }
   </style>
 </head>
@@ -218,96 +419,110 @@
 
   <!-- ACCESO -->
   <div id="pantallaAcceso" class="pantalla-acceso">
-    <div class="login">
-      <h2>Administración de eventos</h2>
+    <div class="acceso">
+      <h1>Invitaciones</h1>
+      <p>Entra con la contraseña de administrador.</p>
 
-      <input
-        type="password"
-        id="claveAdminInput"
-        placeholder="Contraseña"
-        autocomplete="off"
-      >
+      <label for="claveAdminInput">Contraseña</label>
+      <input type="password" id="claveAdminInput" autocomplete="current-password">
 
-      <button id="btnAcceder">Acceder</button>
+      <button id="btnAcceder" class="btn btn-bloque" style="margin-top:16px">Entrar</button>
 
-      <div id="mensajeAcceso"></div>
+      <div id="mensajeAcceso" role="alert"></div>
     </div>
   </div>
 
 
   <div class="contenedor">
 
-    <h1>Administración de eventos</h1>
+    <header class="encabezado">
+      <div>
+        <h1>Invitaciones</h1>
+        <p>Crea eventos y sigue el envío de las invitaciones.</p>
+      </div>
+      <button id="btnSalir" class="btn-borde" type="button">Salir</button>
+    </header>
 
-    <!-- EVENTOS ACTIVOS Y PROGRAMADOS -->
-    <div class="tarjeta">
 
-      <h2>Eventos activos y programados</h2>
+    <!-- EVENTOS -->
+    <section class="seccion" aria-labelledby="tituloEventos">
+
+      <div class="seccion-titulo">
+        <h2 id="tituloEventos">Eventos</h2>
+        <button id="btnActualizar" class="btn-borde" type="button">Actualizar</button>
+      </div>
 
       <div id="resumenEventos" class="resumen"></div>
 
-      <div id="eventosLista" class="lista-eventos">
-        Cargando información...
+      <div id="eventosLista" aria-live="polite">
+        <div class="vacio">Cargando eventos…</div>
       </div>
 
-    </div>
+    </section>
 
 
-    <!-- CREAR EVENTO -->
-    <div class="tarjeta">
+    <!-- NUEVO EVENTO -->
+    <section class="seccion" aria-labelledby="tituloNuevo">
 
-      <h2>Crear nuevo evento</h2>
+      <div class="seccion-titulo">
+        <h2 id="tituloNuevo">Nuevo evento</h2>
+      </div>
+      <div class="resumen">Al crearlo te llega un correo con el mensaje para el diseñador.</div>
 
-      <div class="campo">
-        <label for="nombreEvento">Nombre del evento</label>
-        <input
-          type="text"
-          id="nombreEvento"
-          placeholder="Ej. Evento de graduación"
-        >
+      <div class="panel">
+
+        <div class="campo">
+          <label for="nombreEvento">Nombre del evento</label>
+          <input type="text" id="nombreEvento" placeholder="Ej. Ceremonia de graduación 2026" maxlength="120">
+        </div>
+
+        <div class="fila-2">
+          <div class="campo">
+            <label for="fechaInicio">Fecha de inicio</label>
+            <input type="date" id="fechaInicio">
+          </div>
+          <div class="campo">
+            <label for="horaInicio">Abren puertas a las</label>
+            <input type="time" id="horaInicio">
+          </div>
+        </div>
+
+        <div class="fila-2">
+          <div class="campo">
+            <label for="fechaFin">Fecha de fin</label>
+            <input type="date" id="fechaFin">
+          </div>
+          <div class="campo">
+            <label for="horaFin">Termina a las</label>
+            <input type="time" id="horaFin">
+          </div>
+        </div>
+
+        <details class="nota">
+          <summary>¿Termina después de medianoche?</summary>
+          Pon como fecha de fin el mismo día en que empieza y una hora de fin
+          menor a la de inicio. Ejemplo: empieza el 5 de octubre a las 20:00 y
+          termina a la 01:00 del día siguiente → fecha de fin 5 de octubre,
+          hora 01:00. El escaneo de entrada solo funciona dentro de este horario.
+        </details>
+
+        <div class="campo">
+          <label for="archivoInvitados">Lista de invitados</label>
+          <label class="zona-archivo" id="zonaArchivo">
+            <strong id="zonaTexto">Elige el archivo de Excel o CSV</strong>
+            <span class="ayuda">Con dos columnas: Nombre y Correo</span>
+            <input type="file" id="archivoInvitados" accept=".xlsx,.xls,.csv">
+          </label>
+          <div id="archivoEstado" class="archivo-estado" aria-live="polite"></div>
+          <div class="ayuda"><a href="#" id="descargarPlantilla">Descargar plantilla de ejemplo</a></div>
+        </div>
+
+        <button id="btnCrear" class="btn btn-bloque" type="button">Crear evento</button>
+
+        <div id="estado" class="mensaje" role="status"></div>
       </div>
 
-      <div class="campo">
-        <label for="fechaInicio">Fecha de inicio</label>
-        <input type="date" id="fechaInicio">
-      </div>
-
-      <div class="campo">
-        <label for="fechaFin">Fecha de finalización</label>
-        <input type="date" id="fechaFin">
-        <small>
-          Si el evento termina después de medianoche, pon aquí el día en
-          que empieza y una hora de finalización menor a la de inicio.
-          Ejemplo: empieza el 5/oct a las 20:00 y termina el 6/oct a la
-          01:00 → fecha de finalización 5/oct, hora de finalización 01:00.
-        </small>
-      </div>
-
-      <div class="campo">
-        <label for="horaInicio">Hora de inicio</label>
-        <input type="time" id="horaInicio">
-      </div>
-
-      <div class="campo">
-        <label for="horaFin">Hora de finalización</label>
-        <input type="time" id="horaFin">
-      </div>
-
-      <div class="campo">
-        <label for="archivoInvitados">Lista de invitados</label>
-        <input
-          type="file"
-          id="archivoInvitados"
-          accept=".xlsx,.xls,.csv"
-        >
-        <small>El archivo debe contener las columnas Nombre y Correo.</small>
-      </div>
-
-      <button id="btnCrear">Crear evento</button>
-
-      <div id="estado"></div>
-
-    </div>
+    </section>
 
   </div>
 
@@ -327,10 +542,14 @@
   // Espera máxima por cada respuesta del servidor.
   const TIMEOUT_MS = 20000;
 
-  // Cada cuánto se refresca el evento actual.
+  // Cada cuánto se refresca la lista de eventos.
   const REFRESCO_MS = 60000;
 
   const MENSAJE_NO_AUTORIZADO = "Acceso no autorizado.";
+
+  const MESES = ["ene", "feb", "mar", "abr", "may", "jun",
+                 "jul", "ago", "sep", "oct", "nov", "dic"];
+  const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
 
   let claveAdmin = "";
   let intervalo = null;
@@ -343,42 +562,40 @@
    * COMUNICACIÓN CON APPS SCRIPT (POST)
    * ==========================================
    */
-  function llamarServidor(cuerpo, esperaMs) {
+  async function llamarServidor(cuerpo, esperaMs) {
 
-    return (async function () {
+    const controlador = new AbortController();
 
-      const controlador = new AbortController();
+    const temporizador = setTimeout(function () {
+      controlador.abort();
+    }, esperaMs || TIMEOUT_MS);
 
-      const temporizador = setTimeout(function () {
-        controlador.abort();
-      }, esperaMs || TIMEOUT_MS);
+    try {
 
-      try {
+      // Sin cabeceras especiales: así el navegador no hace la consulta
+      // previa (preflight) que Apps Script no admite.
+      const respuesta = await fetch(URL_APPS_SCRIPT, {
+        method: "POST",
+        body: JSON.stringify(cuerpo),
+        signal: controlador.signal
+      });
 
-        const respuesta = await fetch(URL_APPS_SCRIPT, {
-          method: "POST",
-          body: JSON.stringify(cuerpo),
-          signal: controlador.signal
-        });
+      return await respuesta.json();
 
-        return await respuesta.json();
+    } catch (error) {
 
-      } catch (error) {
+      return {
+        ok: false,
+        timeout: error.name === "AbortError",
+        mensaje: error.name === "AbortError"
+          ? "El servidor tardó demasiado en responder."
+          : "No se pudo comunicar con el servidor. Revisa tu conexión."
+      };
 
-        return {
-          ok: false,
-          timeout: error.name === "AbortError",
-          mensaje: error.name === "AbortError"
-            ? "El servidor tardó demasiado en responder."
-            : "No se pudo comunicar con el servidor."
-        };
+    } finally {
 
-      } finally {
-
-        clearTimeout(temporizador);
-      }
-
-    })();
+      clearTimeout(temporizador);
+    }
   }
 
 
@@ -396,28 +613,21 @@
     const clave = input.value.trim();
 
     if (!clave) {
-      mensaje.textContent = "Debes ingresar una contraseña.";
+      mensaje.textContent = "Escribe la contraseña.";
       return;
     }
 
     boton.disabled = true;
-    boton.textContent = "Verificando...";
+    boton.textContent = "Entrando…";
     mensaje.textContent = "";
 
-    claveAdmin = clave;
-
-    const datos = await llamarServidor({
-      accion: "listarEventos",
-      clave: clave
-    });
+    const datos = await llamarServidor({ accion: "listarEventos", clave: clave });
 
     boton.disabled = false;
-    boton.textContent = "Acceder";
+    boton.textContent = "Entrar";
 
     // Solo se entra si el servidor confirma explícitamente.
     if (!datos || datos.ok !== true) {
-
-      claveAdmin = "";
 
       mensaje.textContent =
         datos && datos.mensaje === MENSAJE_NO_AUTORIZADO
@@ -426,9 +636,10 @@
 
       input.value = "";
       input.focus();
-
       return;
     }
+
+    claveAdmin = clave;
 
     $("pantallaAcceso").style.display = "none";
 
@@ -450,10 +661,9 @@
     }
 
     $("claveAdminInput").value = "";
-    $("mensajeAcceso").textContent =
-      mensaje || "La sesión terminó. Ingresa de nuevo.";
-
+    $("mensajeAcceso").textContent = mensaje || "";
     $("pantallaAcceso").style.display = "flex";
+    $("claveAdminInput").focus();
   }
 
 
@@ -462,123 +672,23 @@
    * MENSAJES
    * ==========================================
    */
-  function mostrarEstado(mensaje, error = false) {
+  function mostrarEstado(mensaje, tipo) {
 
-    const elemento = $("estado");
+    const caja = $("estado");
 
-    elemento.style.display = "block";
-
-    elemento.textContent = mensaje;
-
-    elemento.style.background =
-      error ? "#f8d7da" : "#d4edda";
-
-    elemento.style.color =
-      error ? "#721c24" : "#155724";
+    caja.textContent = mensaje;
+    caja.className = "mensaje " + (tipo === true || tipo === "error" ? "error" : tipo || "ok");
   }
-
-
-  /*
-   * ==========================================
-   * EVENTO ACTUAL
-   * ==========================================
-   */
-  // Eventos desplegados (se conservan al refrescar la lista).
-  const abiertos = new Set();
 
 
   function elemento(etiqueta, texto, clase) {
 
     const nodo = document.createElement(etiqueta);
 
-    if (texto !== undefined) nodo.textContent = texto;
+    if (texto !== undefined && texto !== null) nodo.textContent = texto;
     if (clase) nodo.className = clase;
 
     return nodo;
-  }
-
-
-  function tarjetaEvento(evento) {
-
-    const clase = evento.estado === "Activo" ? "activo" : "programado";
-
-    const detalle = elemento("details", undefined, "evento " + clase);
-
-    detalle.open = abiertos.has(evento.id);
-
-    detalle.addEventListener("toggle", function () {
-
-      if (detalle.open) {
-        abiertos.add(evento.id);
-      } else {
-        abiertos.delete(evento.id);
-      }
-    });
-
-    const resumen = elemento("summary");
-
-    resumen.appendChild(elemento("span", evento.nombre));
-    resumen.appendChild(elemento("span", evento.estado, "insignia " + clase));
-
-    const cuerpo = elemento("div", undefined, "detalle-evento");
-
-    [
-      "ID: " + evento.id,
-      "Inicia: " + evento.fechaInicio + " a las " + evento.horaInicio,
-      "Termina: " + evento.fechaFin + " a las " + evento.horaFin,
-      "Invitados: " + evento.invitados,
-      "Diseño: " + (
-        evento.tieneDiseno
-          ? "guardado"
-          : "pendiente (súbelo en la página de diseño)"
-      ),
-      "QR: " + (evento.estadoQR || "Pendiente") +
-        " (" + evento.qrListos + " de " + evento.invitados + ")",
-      "Invitaciones: " + (evento.estadoInvitaciones || "Pendiente") +
-        " (" + evento.enviados + " de " + evento.invitados + " enviadas)"
-    ].forEach(function (texto) {
-      cuerpo.appendChild(elemento("div", texto));
-    });
-
-    // Avance de los procesos en segundo plano.
-    [
-      ["Generando QR", evento.procesoQR],
-      ["Enviando invitaciones", evento.procesoEnvio]
-    ].forEach(function (proceso) {
-
-      const info = proceso[1];
-
-      if (!info) return;
-
-      let texto = "⏳ " + proceso[0];
-
-      if (info.segundosSinActividad !== null) {
-        texto += " · última actividad hace " +
-          formatearEspera(info.segundosSinActividad);
-      }
-
-      if (info.porMinuto) {
-        texto += " · ≈ " + info.porMinuto + " por minuto · faltan ≈ " +
-          info.minutosRestantes + " min";
-      }
-
-      const linea = elemento("div", texto, "progreso");
-
-      // Más de 8 minutos sin actividad: algo se trabó. La revisión
-      // automática lo reactiva en los siguientes 5 minutos.
-      if (info.segundosSinActividad !== null &&
-          info.segundosSinActividad > 480) {
-        linea.className = "progreso atascado";
-        linea.textContent += " · ⚠️ sin avance, se reactivará en breve";
-      }
-
-      cuerpo.appendChild(linea);
-    });
-
-    detalle.appendChild(resumen);
-    detalle.appendChild(cuerpo);
-
-    return detalle;
   }
 
 
@@ -590,60 +700,217 @@
   }
 
 
+  /** "dd/MM/yyyy" → Date (solo fecha) */
+  function leerFecha(texto) {
+
+    const p = String(texto || "").split("/").map(Number);
+
+    return p.length === 3 ? new Date(p[2], p[1] - 1, p[0]) : null;
+  }
+
+
+  function textoFechaEvento(evento) {
+
+    const inicio = leerFecha(evento.fechaInicio);
+    const fin = leerFecha(evento.fechaFin);
+
+    if (!inicio) return "";
+
+    const dia = function (f) {
+      return DIAS[f.getDay()] + " " + f.getDate() + " " + MESES[f.getMonth()];
+    };
+
+    if (!fin || fin.getTime() === inicio.getTime()) {
+      return dia(inicio) + ", de " + evento.horaInicio + " a " + evento.horaFin;
+    }
+
+    return dia(inicio) + " " + evento.horaInicio + " a " + dia(fin) + " " + evento.horaFin;
+  }
+
+
+  /*
+   * ==========================================
+   * EVENTOS
+   * ==========================================
+   */
+  function etapa(nombre, hechos, total, estadoTexto) {
+
+    const fila = elemento("div", null, "etapa");
+
+    fila.appendChild(elemento("span", nombre, "etapa-nombre"));
+
+    const barra = elemento("div", null, "barra");
+    const relleno = document.createElement("span");
+    const porcentaje = total > 0 ? Math.round(hechos / total * 100) : 0;
+
+    relleno.style.width = porcentaje + "%";
+    barra.appendChild(relleno);
+
+    if (total > 0 && hechos >= total) barra.classList.add("completa");
+    if (/error/i.test(estadoTexto || "")) barra.classList.add("problema");
+
+    barra.setAttribute("role", "progressbar");
+    barra.setAttribute("aria-valuenow", porcentaje);
+    barra.setAttribute("aria-valuemin", 0);
+    barra.setAttribute("aria-valuemax", 100);
+    barra.setAttribute("aria-label", nombre);
+
+    fila.appendChild(barra);
+    fila.appendChild(elemento("span", hechos + " de " + total, "etapa-valor"));
+
+    return fila;
+  }
+
+
+  /**
+   * Qué le toca al evento ahora, en palabras.
+   */
+  function siguientePaso(evento) {
+
+    const inv = evento.estadoInvitaciones;
+    const envio = evento.procesoEnvio;
+
+    if (inv === "Completo") {
+      return { texto: "Invitaciones enviadas.", clase: "ok" };
+    }
+
+    if (inv === "Con errores" || inv === "Error") {
+      return {
+        texto: "El envío terminó con problemas. Revisa el correo de aviso para ver qué pasó.",
+        clase: "problema"
+      };
+    }
+
+    if (inv === "En proceso" && envio) {
+
+      let texto = "Enviando invitaciones";
+
+      if (envio.minutosRestantes !== null) {
+        texto += ": faltan unos " + envio.minutosRestantes + " min";
+      }
+
+      if (envio.segundosSinActividad !== null && envio.segundosSinActividad > 480) {
+        return {
+          texto: "El envío lleva " + formatearEspera(envio.segundosSinActividad) +
+            " sin avanzar. Se reactivará solo en unos minutos.",
+          clase: "problema"
+        };
+      }
+
+      return { texto: texto + ".", clase: "" };
+    }
+
+    if (inv === "En proceso") return { texto: "Enviando invitaciones…", clase: "" };
+    if (inv === "En cola") return { texto: "En espera: se enviará al terminar otro evento.", clase: "" };
+    if (inv === "Pausado") return { texto: "Envío pausado.", clase: "atencion" };
+
+    if (inv === "Listo para enviar") {
+      return {
+        texto: "Listo para enviar. Revisa la prueba en tu correo y luego inicia el envío.",
+        clase: "atencion"
+      };
+    }
+
+    if (!evento.tieneDiseno) {
+      return { texto: "Falta el diseño de la invitación. Pídeselo al diseñador.", clase: "atencion" };
+    }
+
+    if (evento.estadoQR !== "Completo") {
+      return { texto: "Generando códigos QR…", clase: "" };
+    }
+
+    return { texto: "Preparando el envío…", clase: "" };
+  }
+
+
+  function tarjetaEvento(evento) {
+
+    const boleto = elemento("article", null, "boleto");
+
+    // ---------- Cuerpo ----------
+    const cuerpo = elemento("div", null, "boleto-cuerpo");
+
+    cuerpo.appendChild(elemento("h3", evento.nombre, "boleto-nombre"));
+    cuerpo.appendChild(elemento("div", textoFechaEvento(evento), "boleto-fecha"));
+
+    const etapas = elemento("div", null, "etapas");
+
+    // Diseño
+    const filaDiseno = elemento("div", null, "etapa");
+    filaDiseno.appendChild(elemento("span", "Diseño", "etapa-nombre"));
+    filaDiseno.appendChild(elemento("span"));
+    filaDiseno.appendChild(
+      evento.tieneDiseno
+        ? elemento("span", "Listo", "marca-ok")
+        : elemento("span", "Falta", "marca-falta")
+    );
+    etapas.appendChild(filaDiseno);
+
+    etapas.appendChild(etapa("Códigos QR", evento.qrListos, evento.invitados, evento.estadoQR));
+    etapas.appendChild(etapa("Invitaciones", evento.enviados, evento.invitados, evento.estadoInvitaciones));
+
+    cuerpo.appendChild(etapas);
+
+    const paso = siguientePaso(evento);
+    cuerpo.appendChild(elemento("div", paso.texto, "aviso-evento " + paso.clase));
+
+    // ---------- Talón ----------
+    const talon = elemento("div", null, "boleto-talon");
+    const fecha = leerFecha(evento.fechaInicio);
+
+    if (fecha) {
+      talon.appendChild(elemento("div", String(fecha.getDate()), "talon-dia"));
+      talon.appendChild(elemento("div", MESES[fecha.getMonth()], "talon-mes"));
+    }
+
+    talon.appendChild(
+      elemento(
+        "span",
+        evento.estado === "Activo" ? "En curso" : "Próximo",
+        "estado" + (evento.estado === "Activo" ? " activo" : "")
+      )
+    );
+
+    boleto.appendChild(cuerpo);
+    boleto.appendChild(talon);
+
+    return boleto;
+  }
+
+
   function mostrarEventos(datos) {
 
     const lista = $("eventosLista");
 
-    lista.replaceChildren();
-
     if (!datos || datos.ok !== true) {
-
-      lista.appendChild(
-        elemento("span", "No se pudo consultar los eventos.", "sin-evento")
-      );
-
-      return;
+      return;   // Se conserva lo que ya estaba.
     }
+
+    lista.replaceChildren();
 
     const eventos = datos.eventos || [];
 
-    const activos = eventos.filter(function (e) {
-      return e.estado === "Activo";
-    });
+    const activos = eventos.filter(function (e) { return e.estado === "Activo"; });
+    const proximos = eventos.filter(function (e) { return e.estado === "Programado"; });
 
-    const programados = eventos.filter(function (e) {
-      return e.estado === "Programado";
-    });
+    const partes = [];
+
+    if (activos.length) partes.push(activos.length + (activos.length === 1 ? " en curso" : " en curso"));
+    partes.push(proximos.length + (proximos.length === 1 ? " próximo" : " próximos"));
 
     $("resumenEventos").textContent =
-      activos.length + " activos de " + (datos.maximo || 3) +
-      " permitidos a la vez · " + programados.length + " programados";
+      partes.join(" y ") + ". Máximo " + (datos.maximo || 3) + " eventos al mismo tiempo.";
 
     if (eventos.length === 0) {
-
       lista.appendChild(
-        elemento(
-          "span",
-          "No hay eventos activos ni programados.",
-          "sin-evento"
-        )
+        elemento("div", "No hay eventos en curso ni próximos. Crea uno abajo.", "vacio")
       );
-
       return;
     }
 
-    [["Activos", activos], ["Programados", programados]].forEach(
-      function (grupo) {
-
-        if (grupo[1].length === 0) return;
-
-        lista.appendChild(elemento("h3", grupo[0]));
-
-        grupo[1].forEach(function (evento) {
-          lista.appendChild(tarjetaEvento(evento));
-        });
-      }
-    );
+    activos.concat(proximos).forEach(function (evento) {
+      lista.appendChild(tarjetaEvento(evento));
+    });
   }
 
 
@@ -651,20 +918,14 @@
 
     if (!claveAdmin) return;
 
-    const datos = await llamarServidor({
-      accion: "listarEventos",
-      clave: claveAdmin
-    });
+    const datos = await llamarServidor({ accion: "listarEventos", clave: claveAdmin });
 
     if (datos && datos.mensaje === MENSAJE_NO_AUTORIZADO) {
-      cerrarSesion();
+      cerrarSesion("La sesión terminó. Entra de nuevo.");
       return;
     }
 
-    // Si falla la consulta, se conserva la lista que ya estaba.
-    if (datos && datos.ok === true) {
-      mostrarEventos(datos);
-    }
+    mostrarEventos(datos);
   }
 
 
@@ -675,16 +936,12 @@
    */
   function limpiarFormulario() {
 
-    [
-      "nombreEvento",
-      "fechaInicio",
-      "fechaFin",
-      "horaInicio",
-      "horaFin",
-      "archivoInvitados"
-    ].forEach(function (id) {
-      $(id).value = "";
-    });
+    ["nombreEvento", "fechaInicio", "fechaFin", "horaInicio", "horaFin", "archivoInvitados"]
+      .forEach(function (id) { $(id).value = ""; });
+
+    $("zonaTexto").textContent = "Elige el archivo de Excel o CSV";
+    $("archivoEstado").textContent = "";
+    $("archivoEstado").className = "archivo-estado";
   }
 
 
@@ -697,52 +954,41 @@
     const horaFin = $("horaFin").value;
     const archivo = $("archivoInvitados").files[0];
 
-    if (
-      !nombre ||
-      !fechaInicio ||
-      !fechaFin ||
-      !horaInicio ||
-      !horaFin
-    ) {
-      mostrarEstado("Completa todos los campos.", true);
+    if (!nombre || !fechaInicio || !fechaFin || !horaInicio || !horaFin) {
+      mostrarEstado("Completa el nombre, las fechas y las horas.", "error");
       return;
     }
 
     if (!archivo) {
-      mostrarEstado("Selecciona el archivo de invitados.", true);
-      return;
-    }
-
-    const confirmar = confirm(
-      "¿Estás seguro/a de que deseas crear este evento?\n\n" +
-      "El evento y la lista de invitados serán registrados."
-    );
-
-    if (!confirmar) {
+      mostrarEstado("Elige el archivo con la lista de invitados.", "error");
       return;
     }
 
     const btn = $("btnCrear");
 
-    btn.disabled = true;
-    btn.textContent = "Creando evento...";
-
     try {
 
       // 1. Leer y validar el archivo ANTES de crear nada.
-      const invitados = await leerArchivoInvitados(archivo);
+      const invitados = await leerArchivoInvitados(archivo, true);
 
       if (invitados.length === 0) {
-        throw new Error("El archivo no contiene invitados válidos.");
+        throw new Error("El archivo no tiene invitados.");
       }
+
+      const confirmar = confirm(
+        "¿Crear \"" + nombre + "\" con " + invitados.length + " invitados?\n\n" +
+        "Se registrarán el evento y la lista de invitados."
+      );
+
+      if (!confirmar) return;
+
+      btn.disabled = true;
+      btn.textContent = "Creando evento…";
+
+      mostrarEstado("Creando \"" + nombre + "\" y registrando " + invitados.length + " invitados…", "info");
 
       // 2. Crear el evento y registrar TODOS los invitados en una
       //    sola petición. El servidor deja listo todo lo demás.
-      mostrarEstado(
-        "Creando evento y registrando " + invitados.length +
-        " invitados..."
-      );
-
       const resultado = await enviarEventoCompleto({
         accion: "crearEventoConInvitados",
         clave: claveAdmin,
@@ -757,25 +1003,25 @@
       if (!resultado.ok) {
 
         if (resultado.mensaje === MENSAJE_NO_AUTORIZADO) {
-          cerrarSesion();
+          cerrarSesion("La sesión terminó. Entra de nuevo.");
         }
 
         throw new Error(resultado.mensaje);
       }
 
       mostrarEstado(
-        "Evento " + resultado.id + " creado con " + resultado.invitados +
-        " invitados. Ya puedes cerrar esta página: los QR se generan " +
-        "en segundo plano."
+        "\"" + (resultado.nombre || nombre) + "\" se creó con " + resultado.invitados +
+        " invitados.\nTe llegó un correo con el mensaje para el diseñador. " +
+        "Ya puedes cerrar esta página: los códigos QR se generan solos.",
+        "ok"
       );
 
       limpiarFormulario();
-
       consultarEventos();
 
     } catch (error) {
 
-      mostrarEstado(error.message, true);
+      mostrarEstado(error.message, "error");
 
     } finally {
 
@@ -796,7 +1042,7 @@
       .trim()
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+      .replace(/[̀-ͯ]/g, "");
   }
 
 
@@ -806,18 +1052,19 @@
   }
 
 
-  async function leerArchivoInvitados(archivo) {
+  /**
+   * Lee y valida el archivo. Con confirmarRepetidos = true pregunta
+   * si hay correos repetidos (al crear); con false solo los cuenta
+   * (vista previa al elegir el archivo).
+   */
+  async function leerArchivoInvitados(archivo, confirmarRepetidos) {
 
     const datos = await archivo.arrayBuffer();
 
     // codepage 65001 = UTF-8 (evita dañar acentos en archivos CSV).
-    const libro = XLSX.read(datos, {
-      type: "array",
-      codepage: 65001
-    });
+    const libro = XLSX.read(datos, { type: "array", codepage: 65001 });
 
     const hoja = libro.Sheets[libro.SheetNames[0]];
-
     const filas = XLSX.utils.sheet_to_json(hoja, { defval: "" });
 
     if (filas.length === 0) {
@@ -827,18 +1074,11 @@
     // Buscar columnas ignorando mayúsculas y acentos.
     const columnas = Object.keys(filas[0]);
 
-    const columnaNombre = columnas.find(function (columna) {
-      return normalizarColumna(columna) === "nombre";
-    });
-
-    const columnaCorreo = columnas.find(function (columna) {
-      return normalizarColumna(columna) === "correo";
-    });
+    const columnaNombre = columnas.find(function (c) { return normalizarColumna(c) === "nombre"; });
+    const columnaCorreo = columnas.find(function (c) { return normalizarColumna(c) === "correo"; });
 
     if (!columnaNombre || !columnaCorreo) {
-      throw new Error(
-        "El archivo debe contener las columnas Nombre y Correo."
-      );
+      throw new Error("El archivo debe tener las columnas Nombre y Correo en la primera fila.");
     }
 
     const resultado = [];
@@ -846,36 +1086,49 @@
     filas.forEach(function (fila, indice) {
 
       const nombre = String(fila[columnaNombre] || "").trim();
-
-      const correo =
-        String(fila[columnaCorreo] || "").trim().toLowerCase();
+      const correo = String(fila[columnaCorreo] || "").trim().toLowerCase();
 
       // Ignorar filas completamente vacías.
-      if (!nombre && !correo) {
-        return;
-      }
+      if (!nombre && !correo) return;
 
       if (!nombre || !correo) {
-        throw new Error(
-          "La fila " + (indice + 2) + " tiene Nombre o Correo vacío."
-        );
+        throw new Error("A la fila " + (indice + 2) + " le falta el nombre o el correo.");
       }
 
       if (!correoValido(correo)) {
-        throw new Error(
-          "El correo de la fila " + (indice + 2) +
-          " no tiene un formato válido: " + correo
-        );
+        throw new Error("El correo de la fila " + (indice + 2) + " no es válido: " + correo);
       }
 
       resultado.push({ nombre: nombre, correo: correo, fila: indice + 2 });
     });
 
-    revisarRepetidos(resultado);
+    if (confirmarRepetidos) {
+      revisarRepetidos(resultado);
+    }
 
-    return resultado.map(function (invitado) {
-      return { nombre: invitado.nombre, correo: invitado.correo };
+    const lista = resultado.map(function (i) { return { nombre: i.nombre, correo: i.correo }; });
+
+    lista.repetidos = contarRepetidos(resultado).length;
+
+    return lista;
+  }
+
+
+  function contarRepetidos(invitados) {
+
+    const vistos = {};
+    const repetidos = [];
+
+    invitados.forEach(function (invitado) {
+
+      if (vistos[invitado.correo]) {
+        repetidos.push(invitado.correo + " (filas " + vistos[invitado.correo] + " y " + invitado.fila + ")");
+      } else {
+        vistos[invitado.correo] = invitado.fila;
+      }
     });
+
+    return repetidos;
   }
 
 
@@ -885,27 +1138,14 @@
    */
   function revisarRepetidos(invitados) {
 
-    const vistos = {};
-    const repetidos = [];
-
-    invitados.forEach(function (invitado) {
-
-      if (vistos[invitado.correo]) {
-        repetidos.push(
-          invitado.correo + " (filas " + vistos[invitado.correo] +
-          " y " + invitado.fila + ")"
-        );
-      } else {
-        vistos[invitado.correo] = invitado.fila;
-      }
-    });
+    const repetidos = contarRepetidos(invitados);
 
     if (repetidos.length === 0) return;
 
     const seguir = confirm(
       "Hay " + repetidos.length + " correo(s) repetido(s) en la lista:\n\n" +
       repetidos.slice(0, 10).join("\n") +
-      (repetidos.length > 10 ? "\n..." : "") +
+      (repetidos.length > 10 ? "\n…" : "") +
       "\n\nCada fila recibirá su propia invitación. ¿Continuar de todos modos?"
     );
 
@@ -915,16 +1155,60 @@
   }
 
 
+  // Vista previa al elegir el archivo: cuántos invitados trae.
+  async function revisarArchivoElegido() {
+
+    const archivo = $("archivoInvitados").files[0];
+    const estado = $("archivoEstado");
+
+    if (!archivo) return;
+
+    $("zonaTexto").textContent = archivo.name;
+    estado.className = "archivo-estado";
+    estado.textContent = "Revisando el archivo…";
+
+    try {
+
+      const lista = await leerArchivoInvitados(archivo, false);
+
+      estado.className = "archivo-estado ok";
+      estado.textContent =
+        "✓ " + lista.length + " invitados listos" +
+        (lista.repetidos ? " (hay " + lista.repetidos + " correo(s) repetido(s))" : "") + ".";
+
+    } catch (error) {
+
+      estado.className = "archivo-estado error";
+      estado.textContent = error.message;
+    }
+  }
+
+
+  // Plantilla de ejemplo (CSV) para llenar.
+  function descargarPlantilla(evento) {
+
+    evento.preventDefault();
+
+    const csv = "﻿Nombre,Correo\nMaría Fernanda López García,maria.lopez@ejemplo.com\nJuan Pérez,juan.perez@ejemplo.com\n";
+    const enlace = document.createElement("a");
+
+    enlace.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    enlace.download = "plantilla_invitados.csv";
+    enlace.click();
+
+    setTimeout(function () { URL.revokeObjectURL(enlace.href); }, 1000);
+  }
+
+
   // Una sola petición POST (texto simple, sin cabeceras especiales).
   function enviarEventoCompleto(cuerpo) {
 
     return llamarServidor(cuerpo, 90000).then(function (resultado) {
 
       if (resultado && resultado.timeout) {
-
         resultado.mensaje =
-          "El servidor tardó demasiado. Revisa en la lista si el evento " +
-          "se creó antes de volver a intentarlo.";
+          "El servidor tardó demasiado. Revisa en la lista de eventos si se creó " +
+          "antes de volver a intentarlo.";
       }
 
       return resultado;
@@ -940,12 +1224,35 @@
   $("btnAcceder").addEventListener("click", iniciarSesion);
 
   $("claveAdminInput").addEventListener("keydown", function (evento) {
-    if (evento.key === "Enter") {
-      iniciarSesion();
+    if (evento.key === "Enter") iniciarSesion();
+  });
+
+  $("btnSalir").addEventListener("click", function () { cerrarSesion(""); });
+  $("btnActualizar").addEventListener("click", consultarEventos);
+  $("btnCrear").addEventListener("click", crearEvento);
+  $("archivoInvitados").addEventListener("change", revisarArchivoElegido);
+  $("descargarPlantilla").addEventListener("click", descargarPlantilla);
+
+  // Arrastrar y soltar el archivo.
+  const zona = $("zonaArchivo");
+
+  ["dragenter", "dragover"].forEach(function (tipo) {
+    zona.addEventListener(tipo, function (e) { e.preventDefault(); zona.classList.add("sobre"); });
+  });
+
+  ["dragleave", "drop"].forEach(function (tipo) {
+    zona.addEventListener(tipo, function () { zona.classList.remove("sobre"); });
+  });
+
+  zona.addEventListener("drop", function (e) {
+    e.preventDefault();
+    if (e.dataTransfer.files.length) {
+      $("archivoInvitados").files = e.dataTransfer.files;
+      revisarArchivoElegido();
     }
   });
 
-  $("btnCrear").addEventListener("click", crearEvento);
+  $("claveAdminInput").focus();
 
 </script>
 
