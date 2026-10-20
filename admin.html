@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Administración de invitaciones</title>
+  <title>Crear evento</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -420,7 +420,7 @@
   <!-- ACCESO -->
   <div id="pantallaAcceso" class="pantalla-acceso">
     <div class="acceso">
-      <h1>Invitaciones</h1>
+      <h1>Crear evento</h1>
       <p>Entra con la contraseña de administrador.</p>
 
       <label for="claveAdminInput">Contraseña</label>
@@ -437,8 +437,8 @@
 
     <header class="encabezado">
       <div>
-        <h1>Invitaciones</h1>
-        <p>Crea eventos y sigue el envío de las invitaciones.</p>
+        <h1>Crear evento</h1>
+        <p>Aquí puedes crear tu evento y ver cómo van los que ya creaste.</p>
       </div>
       <button id="btnSalir" class="btn-borde" type="button">Salir</button>
     </header>
@@ -467,7 +467,6 @@
       <div class="seccion-titulo">
         <h2 id="tituloNuevo">Nuevo evento</h2>
       </div>
-      <div class="resumen">Al crearlo te llega un correo con el mensaje para el diseñador.</div>
 
       <div class="panel">
 
@@ -806,7 +805,7 @@
 
     if (inv === "Listo para enviar") {
       return {
-        texto: "Listo para enviar. Revisa la prueba en tu correo y luego inicia el envío.",
+        texto: "Listo para enviar.",
         clase: "atencion"
       };
     }
@@ -1011,8 +1010,7 @@
 
       mostrarEstado(
         "\"" + (resultado.nombre || nombre) + "\" se creó con " + resultado.invitados +
-        " invitados.\nTe llegó un correo con el mensaje para el diseñador. " +
-        "Ya puedes cerrar esta página: los códigos QR se generan solos.",
+        " invitados.\nYa puedes cerrar esta página: los códigos QR se generan solos.",
         "ok"
       );
 
