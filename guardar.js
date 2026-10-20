@@ -1,14 +1,15 @@
 /*************************************************
  * guardar.js — guarda el diseño de diseno.html en un evento.
  *
- * Al cargar, agrega arriba de la página la tarjeta "1. Evento"
- * (contraseña + lista de eventos activos o programados que aún no
- * tienen diseño) y deja la tarjeta de abajo solo con el botón
- * "Guardar en el evento seleccionado".
+ * Al cargar, agrega arriba de la página el paso "1. Elige el
+ * evento" (contraseña + lista de eventos en curso o próximos que
+ * aún no tienen diseño). El botón del paso 4 guarda el diseño en el
+ * evento elegido.
  *
  * Se carga DESPUÉS del script principal de diseno.html, con
  *   <script src="guardar.js"></script>
- * y usa sus variables: imagen, qr y nombreConfig.
+ * y usa sus variables: imagen, qr, nombreConfig, DISENO_ANCHO y
+ * DISENO_ALTO.
  *************************************************/
 (function () {
 
@@ -22,30 +23,38 @@
 
   const MENSAJE_NO_AUTORIZADO = "Acceso no autorizado.";
 
-  const ESTILO_BOTON =
-    "width:100%;margin-top:14px;padding:14px;border:none;" +
-    "border-radius:8px;background:#222;color:#fff;font-size:16px;" +
-    "font-weight:bold;cursor:pointer";
-
-  const ESTILO_CAMPO =
-    "width:100%;padding:10px;border:1px solid #ccc;" +
-    "border-radius:8px;font-size:16px";
+  const MESES = ["ene", "feb", "mar", "abr", "may", "jun",
+                 "jul", "ago", "sep", "oct", "nov", "dic"];
 
   const $ = id => document.getElementById(id);
 
 
   // ================================================
-  // TARJETA "1. EVENTO" (arriba de la página)
+  // MENSAJES
   // ================================================
-  function crearTarjetaEvento() {
+  function avisar(id, texto, tipo) {
 
-    // La contraseña ahora se pide arriba: se quita la de abajo.
+    const caja = $(id);
+
+    caja.textContent = texto || "";
+    caja.style.color =
+      tipo === "error" ? "#b4413c" :
+      tipo === "ok" ? "#2f8f5b" :
+      "#5b6876";
+    caja.style.fontWeight = tipo === "ok" ? "700" : "400";
+  }
+
+
+  // ================================================
+  // PASO 1: ELEGIR EL EVENTO
+  // ================================================
+  function crearPasoEvento() {
+
+    // Por si la página trae todavía la contraseña en el paso 4.
     const etiquetaVieja = document.querySelector('label[for="claveAdmin"]');
-
     if (etiquetaVieja) etiquetaVieja.remove();
 
     const campoViejo = $("claveAdmin");
-
     if (campoViejo) campoViejo.remove();
 
     const tarjeta = document.createElement("div");
@@ -53,29 +62,20 @@
     tarjeta.className = "tarjeta";
 
     tarjeta.innerHTML =
-      "<h2>1. Evento</h2>" +
-      '<label for="claveAdmin">Contraseña de administrador</label>' +
-      '<input type="password" id="claveAdmin" autocomplete="off" ' +
-        'style="' + ESTILO_CAMPO + '">' +
-      '<button id="btnCargarEventos" type="button" ' +
-        'style="' + ESTILO_BOTON + '">Cargar eventos</button>' +
-      '<label for="selectorEvento">Evento del diseño</label>' +
+      '<h2><span class="num">1</span> Elige el evento</h2>' +
+      '<label for="claveAdmin" style="margin-top:0">Contraseña de administrador</label>' +
+      '<input type="password" id="claveAdmin" autocomplete="current-password">' +
+      '<button id="btnCargarEventos" type="button" class="btn btn-secundario">Ver eventos</button>' +
+      '<label for="selectorEvento">Evento</label>' +
       '<select id="selectorEvento" disabled>' +
-        '<option value="">Primero carga los eventos</option>' +
+        '<option value="">Primero escribe la contraseña y toca "Ver eventos"</option>' +
       "</select>" +
-      '<small class="nota">Solo aparecen eventos activos o programados ' +
-        "que todavía no tienen diseño.</small>" +
-      '<div id="msgEventos" role="status" style="margin-top:12px"></div>';
+      '<span class="nota">Solo aparecen los eventos que todavía no tienen diseño.</span>' +
+      '<div id="msgEventos" role="status"></div>';
 
-    const contenedor = document.querySelector(".contenedor");
-    const titulo = contenedor.querySelector("h1");
+    const pasoImagen = $("pasoImagen");
 
-    contenedor.insertBefore(
-      tarjeta,
-      titulo ? titulo.nextSibling : contenedor.firstChild
-    );
-
-    $("btnGuardar").textContent = "Guardar en el evento seleccionado";
+    pasoImagen.parentNode.insertBefore(tarjeta, pasoImagen);
   }
 
 
@@ -108,7 +108,7 @@
         ok: false,
         mensaje: error.name === "AbortError"
           ? "El servidor tardó demasiado en responder."
-          : "No se pudo comunicar con el servidor."
+          : "No se pudo comunicar con el servidor. Revisa tu conexión."
       };
 
     } finally {
@@ -137,40 +137,53 @@
   }
 
 
+  /** "28/10/2026" + "10:30" → "28 oct, 10:30" */
+  function fechaCorta(fecha, hora) {
+
+    const p = String(fecha || "").split("/").map(Number);
+
+    if (p.length !== 3) return fecha + " " + hora;
+
+    return p[0] + " " + MESES[p[1] - 1] + ", " + hora;
+  }
+
+
   // ================================================
   // LISTA DE EVENTOS
   // ================================================
   async function cargarEventos() {
 
-    const msg = $("msgEventos");
     const boton = $("btnCargarEventos");
     const selector = $("selectorEvento");
 
     const clave = $("claveAdmin").value.trim();
 
     if (!clave) {
-      msg.textContent = "Escribe la contraseña de administrador.";
+      avisar("msgEventos", "Escribe la contraseña de administrador.", "error");
+      $("claveAdmin").focus();
       return;
     }
 
     boton.disabled = true;
-    msg.textContent = "Consultando eventos...";
+    boton.textContent = "Buscando eventos…";
+    avisar("msgEventos", "");
 
-    const datos = await llamarServidor(
-      { accion: "listarEventos", clave: clave },
-      30000
-    );
+    const datos = await llamarServidor({ accion: "listarEventos", clave: clave }, 30000);
 
     boton.disabled = false;
+    boton.textContent = "Ver eventos";
 
     if (!datos || datos.ok !== true) {
 
       selector.disabled = true;
 
-      msg.textContent =
+      avisar(
+        "msgEventos",
         datos && datos.mensaje === MENSAJE_NO_AUTORIZADO
-          ? "❌ Contraseña incorrecta."
-          : "❌ " + ((datos && datos.mensaje) || "No se pudo consultar.");
+          ? "Contraseña incorrecta."
+          : (datos && datos.mensaje) || "No se pudieron consultar los eventos.",
+        "error"
+      );
 
       return;
     }
@@ -186,29 +199,38 @@
       selector.appendChild(new Option("No hay eventos sin diseño", ""));
       selector.disabled = true;
 
-      msg.textContent =
-        "No hay eventos activos o programados sin diseño.";
+      avisar("msgEventos", "Todos los eventos en curso o próximos ya tienen su diseño.");
 
       return;
     }
 
-    selector.appendChild(new Option("Selecciona un evento…", ""));
+    selector.appendChild(new Option("Elige el evento…", ""));
 
     disponibles.forEach(function (evento) {
 
       selector.appendChild(
         new Option(
-          evento.id + " — " + evento.nombre + " (" + evento.estado +
-          ", " + evento.fechaInicio + " " + evento.horaInicio + ")",
+          evento.nombre + " (" + fechaCorta(evento.fechaInicio, evento.horaInicio) + ")",
           evento.id
         )
       );
     });
 
-    selector.disabled = false;
+    // Si solo hay uno, se elige solo.
+    if (disponibles.length === 1) {
+      selector.value = disponibles[0].id;
+    }
 
-    msg.textContent = "✅ " + disponibles.length +
-      (disponibles.length === 1 ? " evento disponible." : " eventos disponibles.");
+    selector.disabled = false;
+    selector.focus();
+
+    avisar(
+      "msgEventos",
+      disponibles.length === 1
+        ? "Hay 1 evento esperando su diseño."
+        : "Hay " + disponibles.length + " eventos esperando su diseño.",
+      "ok"
+    );
   }
 
 
@@ -217,38 +239,49 @@
   // ================================================
   async function guardar() {
 
-    const msg = $("msgGuardar");
     const btn = $("btnGuardar");
 
     const archivo = $("archivo").files[0];
     const clave = $("claveAdmin").value.trim();
-    const idEvento = $("selectorEvento").value;
+    const selector = $("selectorEvento");
+    const idEvento = selector.value;
 
-    if (!clave) {
-      msg.textContent = "Escribe la contraseña arriba y carga los eventos.";
-      return;
-    }
-
-    if (!idEvento) {
-      msg.textContent = "Primero selecciona el evento (arriba, en 1. Evento).";
+    if (!clave || !idEvento) {
+      avisar("msgGuardar", "Primero elige el evento en el paso 1.", "error");
       return;
     }
 
     if (!archivo || !imagen) {
-      msg.textContent = "Primero sube la imagen PNG.";
+      avisar("msgGuardar", "Primero sube la imagen en el paso 2.", "error");
       return;
     }
 
     if (archivo.size > MAX_BYTES) {
-      msg.textContent =
-        "El PNG pesa más de 5 MB. Comprímelo e inténtalo de nuevo.";
+      avisar("msgGuardar", "La imagen pesa más de 5 MB. Pídele al diseñador una versión más ligera.", "error");
+      return;
+    }
+
+    const esperada = DISENO_ANCHO / DISENO_ALTO;
+    const real = imagen.naturalWidth / imagen.naturalHeight;
+
+    if (Math.abs(real - esperada) / esperada > 0.02) {
+      avisar(
+        "msgGuardar",
+        "La imagen debe medir " + DISENO_ANCHO + " × " + DISENO_ALTO + " px.",
+        "error"
+      );
+      return;
+    }
+
+    const nombreEvento = selector.options[selector.selectedIndex].text;
+
+    if (!confirm("¿Guardar este diseño en " + nombreEvento + "?\n\nDespués ya no se puede cambiar desde aquí.")) {
       return;
     }
 
     btn.disabled = true;
-    msg.textContent = "Guardando...";
-
-    let texto = "";
+    btn.textContent = "Guardando…";
+    avisar("msgGuardar", "");
 
     try {
 
@@ -279,21 +312,26 @@
         90000
       );
 
-      texto = (datos.ok ? "✅ " : "❌ ") + datos.mensaje;
-
-      // El evento ya tiene diseño: sale de la lista.
       if (datos.ok) {
+
+        avisar("msgGuardar", "✓ " + datos.mensaje + " Ya puedes cerrar esta página.", "ok");
+
+        // El evento ya tiene diseño: sale de la lista.
         await cargarEventos();
+
+      } else {
+
+        avisar("msgGuardar", datos.mensaje, "error");
       }
 
     } catch (error) {
 
-      texto = "❌ " + error.message;
+      avisar("msgGuardar", error.message, "error");
 
     } finally {
 
       btn.disabled = false;
-      msg.textContent = texto;
+      btn.textContent = "Guardar diseño";
     }
   }
 
@@ -301,14 +339,12 @@
   // ================================================
   // INICIO
   // ================================================
-  crearTarjetaEvento();
+  crearPasoEvento();
 
   $("btnCargarEventos").addEventListener("click", cargarEventos);
 
   $("claveAdmin").addEventListener("keydown", function (evento) {
-    if (evento.key === "Enter") {
-      cargarEventos();
-    }
+    if (evento.key === "Enter") cargarEventos();
   });
 
   $("btnGuardar").addEventListener("click", guardar);
