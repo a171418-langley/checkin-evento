@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,116 +5,298 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Diseño de invitación</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+
   <style>
+    :root {
+      --tinta: #1d2a3a;
+      --tinta-suave: #5b6876;
+      --papel: #f3f5f2;
+      --blanco: #ffffff;
+      --linea: #d9dfe4;
+      --sello: #16697a;
+      --sello-claro: #e6f0f1;
+      --verde: #2f8f5b;
+      --verde-claro: #e8f3ec;
+      --ladrillo: #b4413c;
+      --ladrillo-claro: #f8e9e8;
+      --fuente: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    }
+
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      color: #222;
+      font-family: var(--fuente);
+      font-size: 16px;
+      line-height: 1.5;
+      background: var(--papel);
+      color: var(--tinta);
     }
 
     .contenedor {
-      max-width: 950px;
-      margin: 30px auto;
-      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 28px 16px 48px;
     }
 
-    h1 { text-align: center; }
+    .contenedor > h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.15;
+    }
 
+    .bajada {
+      margin: 4px 0 26px;
+      color: var(--tinta-suave);
+    }
+
+    /* Cada paso es una tarjeta numerada (el orden sí importa). */
     .tarjeta {
-      background: white;
-      padding: 20px;
-      border-radius: 14px;
-      margin-bottom: 20px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+      background: var(--blanco);
+      border: 1px solid var(--linea);
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+
+    .tarjeta > h2 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 16px;
+      font-size: 20px;
+    }
+
+    .num {
+      flex: 0 0 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--sello);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
     }
 
     .controles {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 0 18px;
     }
 
     label {
       display: block;
-      font-weight: bold;
+      font-weight: 700;
       margin: 14px 0 6px;
     }
 
     input[type="text"],
-    input[type="file"],
+    input[type="password"],
     select {
       width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-      background: white;
+      padding: 11px 12px;
+      border: 1px solid var(--linea);
+      border-radius: 10px;
+      font: inherit;
+      background: var(--blanco);
+      color: var(--tinta);
     }
 
-    input[type="range"] { width: 100%; }
+    input[type="range"] { width: 100%; accent-color: var(--sello); }
 
     input[type="color"] {
       width: 100%;
-      height: 42px;
+      height: 44px;
       padding: 3px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background: white;
+      border: 1px solid var(--linea);
+      border-radius: 10px;
+      background: var(--blanco);
     }
 
-    canvas {
-      display: block;
-      width: 100%;
-      height: auto;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background: #eee;
-      touch-action: none;
-      cursor: move;
-    }
-
-    .datos {
+    .casilla {
       display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
-      margin: 12px 0 6px;
+      align-items: center;
+      gap: 8px;
+      font-weight: 400;
+    }
+
+    .casilla input { width: 18px; height: 18px; accent-color: var(--sello); }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 3px solid #f2c94c;
+      outline-offset: 2px;
+    }
+
+    .btn {
+      width: 100%;
+      margin-top: 14px;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: var(--sello);
+      color: #fff;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn:hover { background: #125866; }
+    .btn:disabled { background: #9aa7b1; cursor: not-allowed; }
+
+    .btn-secundario {
+      background: var(--blanco);
+      color: var(--sello);
+      border: 2px solid var(--sello);
+    }
+
+    .btn-secundario:hover { background: var(--sello-claro); }
+
+    /* ---------- Subir imagen ---------- */
+
+    .zona-archivo {
+      display: block;
+      margin: 0;
+      padding: 22px;
+      border: 2px dashed var(--linea);
+      border-radius: 12px;
+      background: #fafbfa;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 400;
+    }
+
+    .zona-archivo:hover { border-color: var(--sello); background: var(--sello-claro); }
+    .zona-archivo:focus-within { outline: 3px solid #f2c94c; outline-offset: 2px; }
+    .zona-archivo strong { display: block; font-size: 17px; }
+
+    .zona-archivo input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+
+    .requisito {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--sello-claro);
+      color: var(--sello);
       font-size: 14px;
+      font-weight: 700;
     }
 
     .nota {
       display: block;
-      color: #666;
+      color: var(--tinta-suave);
+      font-size: 14px;
       line-height: 1.5;
       margin-top: 10px;
     }
 
     #msg {
-      color: #721c24;
+      color: var(--ladrillo);
       margin-top: 12px;
       white-space: pre-wrap;
     }
 
-    .seccion {
-      border-top: 1px solid #eee;
-      margin-top: 20px;
-      padding-top: 8px;
+    #msg:empty { display: none; }
+
+    /* ---------- Acomodar: vista previa + ajustes ---------- */
+
+    .acomodar {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
     }
 
-    .ayuda {
-      background: #f5f7fa;
-      border-radius: 8px;
-      padding: 12px;
+    .vista { position: sticky; top: 16px; }
+
+    .vista-marco { position: relative; }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid var(--linea);
+      border-radius: 10px;
+      background: #eef1f3;
+      touch-action: none;
+      cursor: move;
+    }
+
+    .vista-vacia {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+      color: var(--tinta-suave);
+      pointer-events: none;
+    }
+
+    .vista-vacia[hidden] { display: none; }
+
+    .datos {
+      display: flex;
+      gap: 6px 16px;
+      flex-wrap: wrap;
+      margin: 10px 0 0;
+      font-size: 13px;
+      color: var(--tinta-suave);
+    }
+
+    .datos b { color: var(--tinta); }
+
+    .leyenda {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
       font-size: 14px;
-      line-height: 1.5;
-      margin-top: 12px;
+      margin-top: 10px;
+      color: var(--tinta-suave);
     }
 
-    @media (max-width: 600px) {
-      .contenedor { padding: 12px; margin: 12px auto; }
-      .tarjeta { padding: 14px; }
+    .muestra {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px dashed;
+      border-radius: 3px;
+      vertical-align: -2px;
+      margin-right: 6px;
+    }
+
+    .ajustes h3 {
+      margin: 0 0 4px;
+      font-size: 16px;
+    }
+
+    .ajustes h3:not(:first-child) {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid #e6eaed;
+    }
+
+    .valor { font-weight: 400; color: var(--tinta-suave); }
+
+    #msgGuardar, #msgEventos { margin-top: 12px; }
+
+    @media (max-width: 760px) {
+      .acomodar { grid-template-columns: 1fr; }
+      .vista { position: static; }
+      .contenedor > h1 { font-size: 26px; }
     }
   </style>
 </head>
@@ -124,126 +305,133 @@
 <div class="contenedor">
 
   <h1>Diseño de invitación</h1>
+  <p class="bajada">Sube el diseño y acomoda dónde van el nombre del invitado y su código QR.</p>
 
-  <div class="tarjeta">
-    <label for="archivo">Imagen base de la invitación (PNG)</label>
-    <input type="file" id="archivo" accept="image/png">
+  <!-- El paso 1 (elegir el evento) lo agrega guardar.js aquí. -->
 
-    <div class="controles">
-      <div>
-        <label for="codigo">Código QR de prueba</label>
-        <input type="text" id="codigo" value="ABCD2345">
-      </div>
+  <div class="tarjeta" id="pasoImagen">
+    <h2><span class="num">2</span> Sube la imagen</h2>
 
-      <div>
-        <label for="nombre">Nombre de prueba</label>
-        <input type="text" id="nombre" value="NOMBRE DEL INVITADO"
-               maxlength="150">
-      </div>
-    </div>
-
-    <label>
-      <input type="checkbox" id="final">
-      Ver resultado final (sin marcos de edición)
+    <label class="zona-archivo" for="archivo">
+      <strong id="archivoNombre">Elige la imagen PNG</strong>
+      <span class="requisito">600 × 900 px</span>
+      <input type="file" id="archivo" accept="image/png">
     </label>
+
+    <span class="nota">
+      Vertical, en formato PNG y de máximo 5 MB. Deja libre un espacio para el
+      nombre y otro para el código QR.
+    </span>
 
     <div id="msg" role="status" aria-live="polite"></div>
   </div>
 
   <div class="tarjeta">
-    <h2>Vista previa</h2>
+    <h2><span class="num">3</span> Acomoda el nombre y el código QR</h2>
 
-    <canvas id="lienzo" width="700" height="400"></canvas>
+    <div class="acomodar">
 
-    <div class="datos">
-      <span>QR X: <b id="qrX">-</b></span>
-      <span>QR Y: <b id="qrY">-</b></span>
-      <span>QR tamaño: <b id="qrTamTxt">-</b></span>
-    </div>
+      <div class="vista">
+        <div class="vista-marco">
+          <canvas id="lienzo" width="600" height="900"></canvas>
+          <div class="vista-vacia" id="vistaVacia">Aquí verás la invitación cuando subas la imagen.</div>
+        </div>
 
-    <div class="datos">
-      <span>Nombre X: <b id="nombreX">-</b></span>
-      <span>Nombre Y: <b id="nombreY">-</b></span>
-      <span>Ancho: <b id="nombreAnchoTxt">-</b></span>
-    </div>
+        <div class="leyenda">
+          <span><span class="muestra" style="border-color:#1976d2"></span>Nombre</span>
+          <span><span class="muestra" style="border-color:#e91e63"></span>Código QR</span>
+        </div>
 
-    <small class="nota">
-      Arrastra el QR o el recuadro del nombre para moverlos.
-      Los valores se calculan como porcentajes de la imagen.
-    </small>
+        <div class="datos">
+          <span>QR: <b id="qrX">-</b>, <b id="qrY">-</b>, tamaño <b id="qrTamTxt">-</b></span>
+          <span>Nombre: <b id="nombreX">-</b>, <b id="nombreY">-</b>, ancho <b id="nombreAnchoTxt">-</b></span>
+        </div>
+      </div>
 
-    <div class="ayuda">
-      El marco rosa corresponde al QR y el marco azul al área del nombre.
-      Los marcos solo son ayudas de edición: no aparecerán en la imagen final.
+      <div class="ajustes">
+
+        <h3>Cómo moverlos</h3>
+        <span class="nota" style="margin-top:0">
+          Arrastra el recuadro azul (nombre) o el rosa (QR) sobre la imagen.
+          Los marcos no salen en la invitación final.
+        </span>
+
+        <label class="casilla">
+          <input type="checkbox" id="final">
+          Ver cómo queda (sin marcos)
+        </label>
+
+        <h3>Prueba con</h3>
+        <div class="controles">
+          <div>
+            <label for="nombre">Nombre de ejemplo</label>
+            <input type="text" id="nombre" value="María Fernanda López García" maxlength="150">
+          </div>
+          <div>
+            <label for="codigo">Código de ejemplo</label>
+            <input type="text" id="codigo" value="ABCD2345">
+          </div>
+        </div>
+        <span class="nota">Prueba con el nombre más largo de la lista para ver que quepa.</span>
+
+        <h3>Código QR</h3>
+        <label for="tam">Tamaño <span class="valor" id="tamTxt">18%</span></label>
+        <input type="range" id="tam" min="3" max="40" step="0.5" value="18">
+
+        <h3>Nombre</h3>
+        <div class="controles">
+          <div>
+            <label for="fuente">Tipo de letra</label>
+            <select id="fuente">
+              <option value="Arial">Arial</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Times New Roman">Times New Roman</option>
+              <option value="Verdana">Verdana</option>
+              <option value="Trebuchet MS">Trebuchet MS</option>
+              <option value="Courier New">Courier New</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="colorNombre">Color</label>
+            <input type="color" id="colorNombre" value="#222222">
+          </div>
+
+          <div>
+            <label for="alineacion">Alineación</label>
+            <select id="alineacion">
+              <option value="center">Centrado</option>
+              <option value="left">Izquierda</option>
+              <option value="right">Derecha</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="fuenteTam">Tamaño de letra <span class="valor" id="fuenteTamTxt">4%</span></label>
+        <input type="range" id="fuenteTam" min="1" max="10" step="0.25" value="4">
+
+        <label for="anchoNombre">Ancho del recuadro <span class="valor" id="anchoNombreValor">60%</span></label>
+        <input type="range" id="anchoNombre" min="10" max="95" step="1" value="60">
+      </div>
+
     </div>
   </div>
 
   <div class="tarjeta">
-    <h2>Configuración del QR</h2>
-
-    <label for="tam">
-      Tamaño del QR: <span id="tamTxt">18%</span>
-    </label>
-    <input type="range" id="tam" min="3" max="40" step="0.5" value="18">
-
-    <div class="seccion">
-      <h2>Configuración del nombre</h2>
-
-      <div class="controles">
-        <div>
-          <label for="fuente">Tipo de letra</label>
-          <select id="fuente">
-            <option value="Arial">Arial</option>
-            <option value="Georgia">Georgia</option>
-            <option value="Times New Roman">Times New Roman</option>
-            <option value="Verdana">Verdana</option>
-            <option value="Trebuchet MS">Trebuchet MS</option>
-            <option value="Courier New">Courier New</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="colorNombre">Color del nombre</label>
-          <input type="color" id="colorNombre" value="#222222">
-        </div>
-
-        <div>
-          <label for="alineacion">Alineación</label>
-          <select id="alineacion">
-            <option value="center">Centrado</option>
-            <option value="left">Izquierda</option>
-            <option value="right">Derecha</option>
-          </select>
-        </div>
-      </div>
-
-      <label for="fuenteTam">
-        Tamaño de letra: <span id="fuenteTamTxt">4%</span>
-      </label>
-      <input type="range" id="fuenteTam" min="1" max="10"
-             step="0.25" value="4">
-
-      <label for="anchoNombre">
-        Ancho del área del nombre:
-        <span id="anchoNombreValor">60%</span>
-      </label>
-      <input type="range" id="anchoNombre" min="10" max="95"
-             step="1" value="60">
-    </div>
+    <h2><span class="num">4</span> Guarda el diseño</h2>
+    <span class="nota" style="margin-top:0">Se guarda en el evento que elegiste en el paso 1.</span>
+    <button id="btnGuardar" type="button" class="btn">Guardar diseño</button>
+    <div id="msgGuardar" role="status"></div>
   </div>
 
-     <div class="tarjeta">
-     <h2>Guardar diseño</h2>
-     <label for="claveAdmin">Contraseña de administrador</label>
-     <input type="password" id="claveAdmin" autocomplete="off">
-     <button id="btnGuardar" type="button" style="width:100%;margin-top:14px;padding:14px;border:none;border-radius:8px;background:#222;color:#fff;font-size:16px;font-weight:bold;cursor:pointer">Guardar en el evento actual</button>
-     <div id="msgGuardar" role="status" style="margin-top:12px"></div>
-   </div>
-  
 </div>
 
 <script>
   "use strict";
+
+  // Tamaño obligatorio del diseño (el de la presentación base).
+  const DISENO_ANCHO = 600;
+  const DISENO_ALTO = 900;
 
   const FUENTES_QR = [
     "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js",
@@ -649,7 +837,7 @@ function dibujarNombre() {
     if (!archivo) return;
 
     if (archivo.type !== "image/png") {
-      $("msg").textContent = "Selecciona una imagen PNG.";
+      $("msg").textContent = "La imagen debe ser PNG.";
       $("archivo").value = "";
       return;
     }
@@ -662,7 +850,31 @@ function dibujarNombre() {
     const img = new Image();
 
     img.onload = function() {
+
+      // El diseño debe medir 600 × 900 px (o la misma proporción),
+      // igual que la presentación base de Slides.
+      const esperada = DISENO_ANCHO / DISENO_ALTO;
+      const real = img.naturalWidth / img.naturalHeight;
+
+      if (Math.abs(real - esperada) / esperada > 0.02) {
+        $("msg").textContent =
+          "Esta imagen mide " + img.naturalWidth + " × " + img.naturalHeight +
+          " px. El diseño debe medir " + DISENO_ANCHO + " × " + DISENO_ALTO +
+          " px. Pídele al diseñador que la ajuste.";
+        $("archivo").value = "";
+        $("archivoNombre").textContent = "Elige la imagen PNG";
+        imagen = null;
+        URL.revokeObjectURL(urlImagenActual);
+        urlImagenActual = null;
+        ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+        $("vistaVacia").hidden = false;
+        return;
+      }
+
       imagen = img;
+      $("msg").textContent = "";
+      $("archivoNombre").textContent = archivo.name;
+      $("vistaVacia").hidden = true;
 
       // Se limita el ancho de la vista previa.
       // La imagen original se conservará aparte al conectar
@@ -699,7 +911,8 @@ function dibujarNombre() {
     });
 </script>
 
-  <script src="guardar.js"></script>
   
+  <script src="guardar.js"></script>
+
 </body>
 </html>
