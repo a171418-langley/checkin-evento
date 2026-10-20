@@ -2,143 +2,228 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#16697a">
+  <title>Acceso al evento</title>
 
-  <title>Check-in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    * {
-      box-sizing: border-box;
+    :root {
+      --tinta: #1d2a3a;
+      --tinta-suave: #5b6876;
+      --papel: #f3f5f2;
+      --blanco: #ffffff;
+      --linea: #d9dfe4;
+      --sello: #16697a;
+      --verde: #2f8f5b;
+      --verde-claro: #e8f3ec;
+      --ambar: #b7791f;
+      --ambar-claro: #faf1e1;
+      --ladrillo: #b4413c;
+      --ladrillo-claro: #f8e9e8;
+      --fuente: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
     }
+
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      text-align: center;
+      font-family: var(--fuente);
+      background: var(--papel);
+      color: var(--tinta);
+      line-height: 1.4;
     }
 
     .contenedor {
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 20px;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 16px 16px 32px;
     }
 
-    h1 {
-      margin-bottom: 10px;
+    /* ---------- Barra superior ---------- */
+
+    .barra-superior {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .barra-superior h1 {
+      margin: 0;
+      font-size: 22px;
     }
 
     #estado {
-      margin: 15px 0;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    #reader {
-      width: 100%;
-      max-width: 500px;
-      margin: 20px auto;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    #resultado {
-      margin-top: 20px;
-      padding: 20px;
-      background: white;
-      border-radius: 10px;
-      font-size: 22px;
-      font-weight: bold;
-      line-height: 1.4;
-      min-height: 80px;
-    }
-
-    #resultado.procesando {
-      background: #e2e3e5;
-      color: #383d41;
-    }
-
-    #resultado.ok {
-      background: #d4edda;
-      color: #155724;
-    }
-
-    #resultado.aviso {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    #resultado.error {
-      background: #f8d7da;
-      color: #721c24;
+      font-size: 14px;
+      color: var(--tinta-suave);
     }
 
     .btn-salir {
-      margin-top: 25px;
-      padding: 10px 18px;
-      border: 1px solid #bbb;
-      border-radius: 8px;
-      background: white;
-      color: #444;
+      padding: 8px 14px;
+      border: 1px solid var(--linea);
+      border-radius: 10px;
+      background: var(--blanco);
+      color: var(--tinta);
+      font: inherit;
       font-size: 14px;
+      font-weight: 700;
       cursor: pointer;
     }
+
+    /* ---------- Cámara ---------- */
+
+    #reader {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #10202b;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    #reader video { object-fit: cover; }
+
+    /* ---------- Resultado (talón del boleto) ---------- */
+
+    .resultado {
+      position: relative;
+      margin-top: 16px;
+      padding: 20px 20px 20px 24px;
+      min-height: 112px;
+      background: var(--blanco);
+      border: 1px solid var(--linea);
+      border-left: 8px solid var(--linea);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .resultado-icono {
+      flex: 0 0 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: 700;
+      background: #eef1f3;
+      color: var(--tinta-suave);
+    }
+
+    .resultado-titulo {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--tinta-suave);
+    }
+
+    .resultado-nombre {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .resultado-detalle {
+      font-size: 15px;
+      color: var(--tinta-suave);
+      margin-top: 2px;
+    }
+
+    .resultado.ok { border-left-color: var(--verde); background: var(--verde-claro); }
+    .resultado.ok .resultado-icono { background: var(--verde); color: #fff; }
+    .resultado.ok .resultado-titulo { color: var(--verde); }
+
+    .resultado.aviso { border-left-color: var(--ambar); background: var(--ambar-claro); }
+    .resultado.aviso .resultado-icono { background: var(--ambar); color: #fff; }
+    .resultado.aviso .resultado-titulo { color: #8a5a12; }
+
+    .resultado.error { border-left-color: var(--ladrillo); background: var(--ladrillo-claro); }
+    .resultado.error .resultado-icono { background: var(--ladrillo); color: #fff; }
+    .resultado.error .resultado-titulo { color: var(--ladrillo); }
+
+    .resultado.procesando .resultado-icono { animation: latido 1s ease-in-out infinite; }
+
+    @keyframes latido {
+      50% { opacity: .45; }
+    }
+
+    /* Un destello breve al llegar un resultado. */
+    .resultado.nuevo { animation: aparecer .25s ease-out; }
+
+    @keyframes aparecer {
+      from { transform: scale(.97); opacity: .6; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* ---------- Acceso ---------- */
 
     .pantalla-acceso {
       position: fixed;
       inset: 0;
-      background: #f4f6f8;
+      background: var(--papel);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 9999;
+      padding: 16px;
+      z-index: 10;
     }
 
-    .login {
-      width: 90%;
-      max-width: 400px;
-      background: white;
-      padding: 30px;
-      border-radius: 14px;
-      box-shadow: 0 3px 15px rgba(0,0,0,0.12);
+    .acceso {
+      width: 100%;
+      max-width: 380px;
+      background: var(--blanco);
+      border: 1px solid var(--linea);
+      border-radius: 16px;
+      padding: 28px;
     }
 
-    .login h2 {
-      margin-top: 0;
-      text-align: center;
-      margin-bottom: 25px;
-    }
+    .acceso h2 { margin: 0 0 4px; font-size: 26px; }
+    .acceso p { margin: 0 0 20px; color: var(--tinta-suave); }
 
-    .login input {
+    .acceso label { display: block; font-weight: 700; margin-bottom: 6px; }
+
+    .acceso input {
       width: 100%;
       padding: 13px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-      margin-bottom: 15px;
+      border: 1px solid var(--linea);
+      border-radius: 10px;
+      font: inherit;
+      font-size: 17px;
+      margin-bottom: 14px;
     }
 
-    .login button {
+    .acceso button {
       width: 100%;
-      padding: 13px;
+      padding: 14px;
       border: none;
-      border-radius: 8px;
-      background: #222;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
+      border-radius: 10px;
+      background: var(--sello);
+      color: #fff;
+      font: inherit;
+      font-size: 17px;
+      font-weight: 700;
       cursor: pointer;
     }
 
-    .login button:disabled {
-      background: #999;
+    .acceso button:disabled { background: #9aa7b1; }
+
+    #mensajeAcceso { margin-top: 12px; color: var(--ladrillo); min-height: 24px; }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid #f2c94c;
+      outline-offset: 2px;
     }
 
-    #mensajeAcceso {
-      margin-top: 15px;
-      text-align: center;
-      color: #721c24;
+    @media (prefers-reduced-motion: reduce) {
+      .resultado.procesando .resultado-icono,
+      .resultado.nuevo { animation: none; }
     }
   </style>
 </head>
@@ -147,34 +232,40 @@
 
   <!-- ACCESO -->
   <div id="pantallaAcceso" class="pantalla-acceso">
-    <div class="login">
-      <h2>Acceso al check-in</h2>
+    <div class="acceso">
+      <h2>Acceso al evento</h2>
+      <p>Entra con la contraseña de check-in.</p>
 
-      <input
-        type="password"
-        id="claveCheckinInput"
-        placeholder="Contraseña"
-        autocomplete="off"
-      >
+      <label for="claveCheckinInput">Contraseña</label>
+      <input type="password" id="claveCheckinInput" autocomplete="current-password">
 
-      <button id="btnAcceder">Acceder</button>
+      <button id="btnAcceder">Entrar</button>
 
-      <div id="mensajeAcceso"></div>
+      <div id="mensajeAcceso" role="alert"></div>
     </div>
   </div>
 
 
   <div class="contenedor">
 
-    <h1>Check-in</h1>
-
-    <div id="estado">Esperando acceso...</div>
+    <div class="barra-superior">
+      <div>
+        <h1>Acceso al evento</h1>
+        <div id="estado">Esperando acceso…</div>
+      </div>
+      <button id="btnSalir" class="btn-salir">Salir</button>
+    </div>
 
     <div id="reader"></div>
 
-    <div id="resultado">Esperando código QR...</div>
-
-    <button id="btnSalir" class="btn-salir">Salir</button>
+    <div id="resultado" class="resultado" role="status" aria-live="assertive">
+      <div class="resultado-icono" id="resIcono" aria-hidden="true">⌁</div>
+      <div>
+        <div class="resultado-titulo" id="resTitulo">Listo para escanear</div>
+        <div class="resultado-nombre" id="resNombre"></div>
+        <div class="resultado-detalle" id="resDetalle">Apunta la cámara al código QR de la invitación.</div>
+      </div>
+    </div>
 
   </div>
 
@@ -216,6 +307,7 @@
   let ultimoCodigo = "";
   let ultimoMomento = 0;
   let lector = null;
+  let audio = null;
 
 
   /*
@@ -262,7 +354,7 @@
     script.onerror = function () {
       terminar({
         ok: false,
-        mensaje: "No se pudo comunicar con el servidor."
+        mensaje: "No se pudo comunicar con el servidor. Revisa la conexión a internet."
       });
     };
 
@@ -278,16 +370,73 @@
 
   /*
    * ==========================================
+   * SONIDO Y VIBRACIÓN
+   * ==========================================
+   * Para que el personal sepa el resultado sin mirar la pantalla.
+   */
+  function sonar(tipo) {
+
+    try {
+
+      if (navigator.vibrate) {
+        navigator.vibrate(tipo === "ok" ? 80 : [120, 80, 120]);
+      }
+
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+
+      const notas = tipo === "ok" ? [880, 1320] : tipo === "aviso" ? [660] : [300, 220];
+
+      notas.forEach(function (frecuencia, i) {
+
+        const osc = audio.createOscillator();
+        const vol = audio.createGain();
+        const inicio = audio.currentTime + i * 0.13;
+
+        osc.frequency.value = frecuencia;
+        osc.type = "sine";
+        vol.gain.setValueAtTime(0.18, inicio);
+        vol.gain.exponentialRampToValueAtTime(0.001, inicio + 0.12);
+
+        osc.connect(vol);
+        vol.connect(audio.destination);
+        osc.start(inicio);
+        osc.stop(inicio + 0.13);
+      });
+
+    } catch (error) {
+      // Sin sonido no pasa nada.
+    }
+  }
+
+
+  /*
+   * ==========================================
    * PANTALLA DE RESULTADO
    * ==========================================
    */
-  function mostrar(texto, clase) {
+  const ICONOS = { ok: "✓", aviso: "!", error: "✕", procesando: "…", "": "⌁" };
 
-    const resultado = $("resultado");
+  function mostrar(clase, titulo, nombre, detalle) {
+
+    const caja = $("resultado");
+
+    caja.className = "resultado " + (clase || "");
 
     // textContent: el nombre del invitado nunca se interpreta como HTML.
-    resultado.textContent = texto;
-    resultado.className = clase || "";
+    $("resIcono").textContent = ICONOS[clase || ""] || "⌁";
+    $("resTitulo").textContent = titulo || "";
+    $("resNombre").textContent = nombre || "";
+    $("resDetalle").textContent = detalle || "";
+
+    if (clase && clase !== "procesando") {
+      void caja.offsetWidth;   // reinicia la animación
+      caja.classList.add("nuevo");
+    }
+  }
+
+
+  function mostrarListo() {
+    mostrar("", "Listo para escanear", "", "Apunta la cámara al código QR de la invitación.");
   }
 
 
@@ -301,19 +450,14 @@
     $("claveCheckinInput").value = "";
     $("mensajeAcceso").textContent = mensaje || "";
     $("btnAcceder").disabled = false;
-    $("btnAcceder").textContent = "Acceder";
+    $("btnAcceder").textContent = "Entrar";
     $("pantallaAcceso").style.display = "flex";
+    $("claveCheckinInput").focus();
   }
 
 
   function verificarClave(clave, callback) {
-
-    llamarBackend(
-      { accion: "validarCheckin", clave: clave },
-      function (datos) {
-        callback(datos);
-      }
-    );
+    llamarBackend({ accion: "validarCheckin", clave: clave }, callback);
   }
 
 
@@ -326,13 +470,19 @@
     const clave = input.value.trim();
 
     if (!clave) {
-      mensaje.textContent = "Debes ingresar una contraseña.";
+      mensaje.textContent = "Escribe la contraseña.";
       return;
     }
 
     boton.disabled = true;
-    boton.textContent = "Verificando...";
+    boton.textContent = "Entrando…";
     mensaje.textContent = "";
+
+    // Se prepara el sonido aquí: los navegadores lo permiten solo
+    // después de que la persona toca la pantalla.
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {}
 
     verificarClave(clave, function (datos) {
 
@@ -340,17 +490,15 @@
       if (!datos || datos.ok !== true) {
 
         boton.disabled = false;
-        boton.textContent = "Acceder";
+        boton.textContent = "Entrar";
 
         mensaje.textContent =
           datos && datos.mensaje === MENSAJE_NO_AUTORIZADO
             ? "Contraseña incorrecta."
-            : (datos && datos.mensaje) ||
-              "No se pudo verificar el acceso.";
+            : (datos && datos.mensaje) || "No se pudo verificar el acceso.";
 
         input.value = "";
         input.focus();
-
         return;
       }
 
@@ -366,6 +514,7 @@
 
     $("pantallaAcceso").style.display = "none";
 
+    mostrarListo();
     iniciarCamara();
   }
 
@@ -377,10 +526,9 @@
 
     await detenerCamara();
 
-    mostrar("Esperando código QR...", "");
+    $("estado").textContent = "Esperando acceso…";
 
-    $("estado").textContent = "Esperando acceso...";
-
+    mostrarListo();
     mostrarLogin(mensaje);
   }
 
@@ -426,7 +574,7 @@
 
   async function iniciarCamara() {
 
-    $("estado").textContent = "Iniciando cámara...";
+    $("estado").textContent = "Iniciando cámara…";
 
     try {
 
@@ -438,7 +586,10 @@
         { facingMode: "environment" },
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 }
+          qrbox: function (ancho, alto) {
+            const lado = Math.floor(Math.min(ancho, alto) * 0.7);
+            return { width: lado, height: lado };
+          }
         },
         qrDetectado,
         function () {
@@ -446,7 +597,7 @@
         }
       );
 
-      $("estado").textContent = "📷 Cámara activa — escanea un QR";
+      $("estado").textContent = "Cámara lista";
 
     } catch (error) {
 
@@ -454,13 +605,15 @@
 
       lector = null;
 
-      $("estado").textContent = "❌ No se pudo iniciar la cámara.";
+      $("estado").textContent = "La cámara no está disponible";
 
       mostrar(
+        "error",
+        "No se pudo iniciar la cámara",
+        "",
         error && error.message === "No se pudo cargar el lector de QR."
-          ? error.message
-          : "Verifica los permisos de cámara del navegador.",
-        "error"
+          ? "No se pudo cargar el lector. Revisa la conexión a internet y recarga la página."
+          : "Revisa que el navegador tenga permiso para usar la cámara y recarga la página."
       );
     }
   }
@@ -491,10 +644,7 @@
     const ahora = Date.now();
 
     // El mismo QR frente a la cámara: se ignora un rato.
-    if (
-      codigo === ultimoCodigo &&
-      ahora - ultimoMomento < IGNORAR_MISMO_CODIGO_MS
-    ) {
+    if (codigo === ultimoCodigo && ahora - ultimoMomento < IGNORAR_MISMO_CODIGO_MS) {
       return;
     }
 
@@ -502,30 +652,36 @@
     ultimoCodigo = codigo;
     ultimoMomento = ahora;
 
-    mostrar("⏳ Procesando QR...", "procesando");
+    mostrar("procesando", "Verificando…", "", "Un momento.");
 
     llamarBackend(
-      {
-        accion: "checkin",
-        codigoQR: codigo,
-        clave: claveCheckin
-      },
+      { accion: "checkin", codigoQR: codigo, clave: claveCheckin },
       function (datos) {
 
         ultimoMomento = Date.now();
 
         if (datos && datos.ok === true) {
 
-          mostrar("✅ " + datos.mensaje, "ok");
+          const entrada = datos.tipo !== "Salida";
+
+          mostrar(
+            "ok",
+            entrada ? "Bienvenido(a)" : "Salida registrada",
+            datos.nombre || "",
+            datos.nombre ? (entrada ? "Entrada registrada." : "Hasta pronto.") : datos.mensaje
+          );
+
+          sonar("ok");
 
         } else if (datos && datos.repetido) {
 
-          mostrar("⚠️ " + datos.mensaje, "aviso");
+          mostrar("aviso", "Ya registrado", datos.nombre || "", datos.mensaje);
+          sonar("aviso");
 
         } else if (datos && datos.mensaje === MENSAJE_NO_AUTORIZADO) {
 
           procesando = false;
-          salir("La sesión terminó. Ingresa de nuevo.");
+          salir("La sesión terminó. Entra de nuevo.");
           return;
 
         } else if (datos && datos.timeout) {
@@ -533,17 +689,23 @@
           // El servidor pudo haber registrado el escaneo:
           // se pide verificar antes de reintentar.
           mostrar(
-            "⚠️ El servidor tardó en responder. Verifica en la lista " +
-            "si este invitado quedó registrado antes de volver a escanear.",
-            "aviso"
+            "aviso",
+            "Sin respuesta del servidor",
+            "",
+            "Puede que sí se haya registrado. Espera unos segundos y vuelve a escanear: " +
+            "si ya quedó, dirá \"Ya registrado\"."
           );
+          sonar("aviso");
 
         } else {
 
           mostrar(
-            "❌ " + ((datos && datos.mensaje) || "Error desconocido."),
-            "error"
+            "error",
+            "No se puede registrar",
+            "",
+            (datos && datos.mensaje) || "Ocurrió un error inesperado."
           );
+          sonar("error");
         }
 
         setTimeout(function () {
@@ -562,9 +724,7 @@
   $("btnAcceder").addEventListener("click", iniciarSesion);
 
   $("claveCheckinInput").addEventListener("keydown", function (evento) {
-    if (evento.key === "Enter") {
-      iniciarSesion();
-    }
+    if (evento.key === "Enter") iniciarSesion();
   });
 
   $("btnSalir").addEventListener("click", function () {
@@ -575,7 +735,7 @@
   if (claveCheckin) {
 
     $("btnAcceder").disabled = true;
-    $("btnAcceder").textContent = "Verificando...";
+    $("btnAcceder").textContent = "Entrando…";
 
     verificarClave(claveCheckin, function (datos) {
 
@@ -593,6 +753,10 @@
           : (datos && datos.mensaje) || ""
       );
     });
+
+  } else {
+
+    $("claveCheckinInput").focus();
   }
 
 </script>
