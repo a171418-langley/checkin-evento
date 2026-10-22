@@ -359,6 +359,51 @@
 
     details.nota summary { cursor: pointer; color: var(--sello); }
 
+    /* Ejemplo visual del archivo de invitados (como una hoja de cálculo) */
+    .ejemplo-archivo { margin: 6px 0 0; }
+
+    .ejemplo-archivo ul {
+      margin: 10px 0 0;
+      padding-left: 20px;
+      line-height: 1.6;
+    }
+
+    .mini-hoja {
+      margin-top: 10px;
+      border: 1px solid var(--linea);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--blanco);
+      font-size: 13px;
+      color: var(--tinta);
+    }
+
+    .mini-fila {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr);
+      border-top: 1px solid #e6eaed;
+    }
+
+    .mini-fila:first-child { border-top: none; }
+
+    .mini-fila span {
+      padding: 6px 8px;
+      border-left: 1px solid #e6eaed;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mini-fila span:first-child {
+      border-left: none;
+      background: #f1f3f4;
+      color: var(--tinta-suave);
+      text-align: center;
+    }
+
+    .mini-letras span { background: #f1f3f4; color: var(--tinta-suave); text-align: center; }
+    .mini-titulos span:not(:first-child) { font-weight: 700; background: var(--sello-claro); }
+
     /* ---------- Mensajes ---------- */
 
     .mensaje {
@@ -513,7 +558,24 @@
             <input type="file" id="archivoInvitados" accept=".xlsx,.xls,.csv">
           </label>
           <div id="archivoEstado" class="archivo-estado" aria-live="polite"></div>
-          <div class="ayuda"><a href="#" id="descargarPlantilla">Descargar plantilla de ejemplo</a></div>
+          <details class="nota ejemplo-archivo">
+            <summary>¿Cómo debe ser el archivo?</summary>
+
+            <div class="mini-hoja" role="img" aria-label="Ejemplo de hoja con las columnas Nombre y Correo">
+              <div class="mini-fila mini-letras"><span></span><span>A</span><span>B</span></div>
+              <div class="mini-fila mini-titulos"><span>1</span><span>Nombre</span><span>Correo</span></div>
+              <div class="mini-fila"><span>2</span><span>María Fernanda López García</span><span>maria.lopez@gmail.com</span></div>
+              <div class="mini-fila"><span>3</span><span>José Ángel Núñez</span><span>jose.nunez@une.edu.mx</span></div>
+              <div class="mini-fila"><span>4</span><span>Ana Sofía Pérez</span><span>ana.perez@hotmail.com</span></div>
+            </div>
+
+            <ul>
+              <li>En la <strong>primera fila</strong>, los títulos <strong>Nombre</strong> y <strong>Correo</strong>.</li>
+              <li>Una persona por fila. El nombre se escribe como debe salir en la invitación.</li>
+              <li>Guárdalo como <strong>Excel (.xlsx)</strong>. Si lo guardas como CSV, elige
+                <strong>"CSV UTF-8"</strong> para que no se pierdan los acentos ni la ñ.</li>
+            </ul>
+          </details>
         </div>
 
         <button id="btnCrear" class="btn btn-bloque" type="button">Crear evento</button>
@@ -1059,8 +1121,26 @@
 
     const datos = await archivo.arrayBuffer();
 
-    // codepage 65001 = UTF-8 (evita dañar acentos en archivos CSV).
-    const libro = XLSX.read(datos, { type: "array", codepage: 65001 });
+    let libro;
+
+    if (/\.csv$/i.test(archivo.name)) {
+
+      // Un CSV guardado desde Excel en Windows suele venir en
+      // "Windows-1252" y no en UTF-8: leído como UTF-8, la á, la ñ,
+      // etc. se vuelven un cuadro vacío. Se prueba UTF-8 y, si
+      // aparecen caracteres dañados, se lee como Windows-1252.
+      let texto = new TextDecoder("utf-8").decode(datos);
+
+      if (texto.indexOf("\uFFFD") !== -1) {
+        texto = new TextDecoder("windows-1252").decode(datos);
+      }
+
+      libro = XLSX.read(texto.replace(/^\uFEFF/, ""), { type: "string" });
+
+    } else {
+
+      libro = XLSX.read(datos, { type: "array" });
+    }
 
     const hoja = libro.Sheets[libro.SheetNames[0]];
     const filas = XLSX.utils.sheet_to_json(hoja, { defval: "" });
@@ -1095,6 +1175,14 @@
 
       if (!correoValido(correo)) {
         throw new Error("El correo de la fila " + (indice + 2) + " no es válido: " + correo);
+      }
+
+      // Caracteres que no se pudieron leer (se verían como un cuadro).
+      if (/\uFFFD/.test(nombre)) {
+        throw new Error(
+          "El nombre de la fila " + (indice + 2) + " tiene letras que no se pudieron leer (" +
+          nombre + "). Guarda el archivo como Excel (.xlsx) y vuelve a subirlo."
+        );
       }
 
       resultado.push({ nombre: nombre, correo: correo, fila: indice + 2 });
@@ -1182,22 +1270,6 @@
   }
 
 
-  // Plantilla de ejemplo (CSV) para llenar.
-  function descargarPlantilla(evento) {
-
-    evento.preventDefault();
-
-    const csv = "﻿Nombre,Correo\nMaría Fernanda López García,maria.lopez@ejemplo.com\nJuan Pérez,juan.perez@ejemplo.com\n";
-    const enlace = document.createElement("a");
-
-    enlace.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    enlace.download = "plantilla_invitados.csv";
-    enlace.click();
-
-    setTimeout(function () { URL.revokeObjectURL(enlace.href); }, 1000);
-  }
-
-
   // Una sola petición POST (texto simple, sin cabeceras especiales).
   function enviarEventoCompleto(cuerpo) {
 
@@ -1229,7 +1301,6 @@
   $("btnActualizar").addEventListener("click", consultarEventos);
   $("btnCrear").addEventListener("click", crearEvento);
   $("archivoInvitados").addEventListener("change", revisarArchivoElegido);
-  $("descargarPlantilla").addEventListener("click", descargarPlantilla);
 
   // Arrastrar y soltar el archivo.
   const zona = $("zonaArchivo");
