@@ -446,7 +446,167 @@
 
     #mensajeAcceso { margin-top: 12px; color: var(--ladrillo); min-height: 24px; }
 
+    /* ---------- Talleres (formulario) ---------- */
+
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--linea);
+      border-radius: 10px;
+      font: inherit;
+      background: var(--blanco);
+      color: var(--tinta);
+    }
+
+    select:focus-visible { outline: 3px solid #f2c94c; outline-offset: 2px; }
+
+    .etiqueta { font-weight: 700; margin-bottom: 2px; }
+    .opcional { font-weight: 400; color: var(--tinta-suave); }
+
+    .taller-bloque {
+      border: 1px solid var(--linea);
+      border-left: 4px solid var(--sello);
+      border-radius: 10px;
+      padding: 14px 16px 4px;
+      margin: 12px 0;
+      background: #fbfcfb;
+    }
+
+    .taller-cabeza {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .taller-cabeza strong { font-size: 15px; color: var(--sello); }
+
+    .btn-quitar {
+      border: none;
+      background: none;
+      color: var(--ladrillo);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 4px 6px;
+    }
+
+    .fila-4 {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr 0.8fr;
+      gap: 10px;
+    }
+
+    .fila-4 label, .taller-bloque label { font-size: 14px; }
+
+    .taller-archivo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .taller-archivo .archivo-estado { margin: 0; min-height: 0; }
+
+    .agregar-taller {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      margin-top: 4px;
+      border: 2px dashed var(--linea);
+      border-radius: 10px;
+      background: none;
+      color: var(--sello);
+      font-weight: 700;
+    }
+
+    .agregar-taller:hover { border-color: var(--sello); background: var(--sello-claro); }
+    .agregar-taller:disabled { color: #9aa7b1; border-color: var(--linea); background: none; cursor: not-allowed; }
+
+    .mas {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--sello);
+      color: #fff;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .agregar-taller:disabled .mas { background: #9aa7b1; }
+
+    /* ---------- Código de check-in y talleres (tarjeta) ---------- */
+
+    .clave-checkin {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      font-size: 14px;
+      color: var(--tinta-suave);
+    }
+
+    .clave-checkin code {
+      font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--tinta);
+      background: var(--papel);
+      border: 1px solid var(--linea);
+      border-radius: 6px;
+      padding: 3px 8px;
+    }
+
+    .btn-mini {
+      padding: 5px 10px;
+      border: 1px solid var(--linea);
+      border-radius: 8px;
+      background: var(--blanco);
+      color: var(--tinta);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .btn-mini:hover { border-color: var(--tinta-suave); }
+    .btn-mini:disabled { color: #9aa7b1; cursor: wait; }
+
+    .talleres-tarjeta { margin-top: 14px; border-top: 1px solid #e6eaed; padding-top: 10px; }
+
+    .talleres-tarjeta h4 { margin: 0 0 6px; font-size: 14px; color: var(--tinta-suave); font-weight: 700; }
+
+    .taller-fila {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 4px 10px;
+      align-items: center;
+      padding: 8px 0;
+      border-top: 1px solid #eef1f3;
+      font-size: 14px;
+    }
+
+    .taller-fila:first-of-type { border-top: none; }
+
+    .taller-fila .t-nombre { font-weight: 700; overflow-wrap: anywhere; }
+    .taller-fila .t-detalle { color: var(--tinta-suave); grid-column: 1; }
+    .taller-fila .t-accion { grid-column: 2; grid-row: 1 / span 2; text-align: right; }
+    .t-pendiente { color: #8a5a12; font-weight: 700; }
+    .t-mensaje { grid-column: 1 / -1; font-size: 13px; }
+    .t-mensaje.ok { color: var(--verde); }
+    .t-mensaje.error { color: var(--ladrillo); white-space: pre-line; }
+
     @media (max-width: 560px) {
+      .fila-4 { grid-template-columns: 1fr 1fr; }
+      .fila-4 .campo-dia { grid-column: 1 / -1; }
       .fila-2 { grid-template-columns: 1fr; gap: 0; }
       .etapa { grid-template-columns: 1fr auto; }
       .etapa .barra { grid-column: 1 / -1; grid-row: 2; }
@@ -526,7 +686,7 @@
             <input type="date" id="fechaInicio">
           </div>
           <div class="campo">
-            <label for="horaInicio">Abren puertas a las</label>
+            <label for="horaInicio">Hora de inicio</label>
             <input type="time" id="horaInicio">
           </div>
         </div>
@@ -537,10 +697,12 @@
             <input type="date" id="fechaFin">
           </div>
           <div class="campo">
-            <label for="horaFin">Termina a las</label>
+            <label for="horaFin">Hora de fin</label>
             <input type="time" id="horaFin">
           </div>
         </div>
+
+        <p class="ayuda" style="margin:-8px 0 14px">El check-in de la entrada se abre 30 minutos antes de la hora de inicio.</p>
 
         <details class="nota">
           <summary>¿Termina después de medianoche?</summary>
@@ -576,6 +738,19 @@
                 <strong>"CSV UTF-8"</strong> para que no se pierdan los acentos ni la ñ.</li>
             </ul>
           </details>
+        </div>
+
+        <div class="campo">
+          <div class="etiqueta">Talleres <span class="opcional">(opcional)</span></div>
+          <div class="ayuda" style="margin-top:0">
+            Máximo 5 por día y una persona solo puede estar en un taller por día.
+            La lista de inscritos (Nombre y Correo, con el mismo correo que en la
+            lista de invitados) puedes subirla ahora o después, antes de que empiece el taller.
+          </div>
+          <div id="talleresLista"></div>
+          <button id="btnAgregarTaller" class="agregar-taller" type="button">
+            <span class="mas" aria-hidden="true">+</span> Agregar taller
+          </button>
         </div>
 
         <button id="btnCrear" class="btn btn-bloque" type="button">Crear evento</button>
@@ -915,6 +1090,9 @@
     const paso = siguientePaso(evento);
     cuerpo.appendChild(elemento("div", paso.texto, "aviso-evento " + paso.clase));
 
+    if (evento.claveCheckin) cuerpo.appendChild(bloqueClave(evento));
+    if (evento.talleres && evento.talleres.length) cuerpo.appendChild(bloqueTalleres(evento));
+
     // ---------- Talón ----------
     const talon = elemento("div", null, "boleto-talon");
     const fecha = leerFecha(evento.fechaInicio);
@@ -939,6 +1117,159 @@
   }
 
 
+  /*
+   * ==========================================
+   * CÓDIGO DE CHECK-IN Y TALLERES (en la tarjeta)
+   * ==========================================
+   */
+  function bloqueClave(evento) {
+
+    const caja = elemento("div", null, "clave-checkin");
+
+    caja.appendChild(elemento("span", "Código de check-in"));
+    caja.appendChild(elemento("code", evento.claveCheckin));
+
+    const boton = elemento("button", "Copiar", "btn-mini");
+    boton.type = "button";
+    boton.setAttribute("aria-label", "Copiar el código de check-in");
+
+    boton.addEventListener("click", function () {
+      navigator.clipboard.writeText(evento.claveCheckin).then(function () {
+        boton.textContent = "Copiado ✓";
+        setTimeout(function () { boton.textContent = "Copiar"; }, 2000);
+      }).catch(function () {});
+    });
+
+    caja.appendChild(boton);
+    caja.appendChild(elemento("span", "Solo sirve para este evento; abre 30 min antes del inicio."));
+
+    return caja;
+  }
+
+
+  // Mensajes de "lista subida" que deben sobrevivir al refresco.
+  const mensajesTaller = {};
+
+  function bloqueTalleres(evento) {
+
+    const caja = elemento("div", null, "talleres-tarjeta");
+
+    caja.appendChild(elemento("h4", "Talleres"));
+
+    evento.talleres.forEach(function (t) {
+
+      const fila = elemento("div", null, "taller-fila");
+
+      fila.appendChild(elemento("span", t.nombre, "t-nombre"));
+
+      const detalle = elemento("span", t.dia + " · " + t.horaInicio + "–" + t.horaFin + " · ", "t-detalle");
+
+      if (t.inscritos > 0) {
+        detalle.appendChild(document.createTextNode(t.inscritos + " de " + t.cupo + " inscritos"));
+      } else {
+        detalle.appendChild(document.createTextNode("cupo " + t.cupo + " · "));
+        detalle.appendChild(elemento("span", "falta la lista", "t-pendiente"));
+      }
+
+      fila.appendChild(detalle);
+
+      const accion = elemento("span", null, "t-accion");
+
+      if (t.editable) {
+
+        const boton = elemento("button", t.inscritos > 0 ? "Cambiar lista" : "Subir lista", "btn-mini");
+        boton.type = "button";
+        boton.addEventListener("click", function () { subirListaTaller(evento, t, boton); });
+        accion.appendChild(boton);
+
+      } else if (evento.estado === "Activo") {
+
+        accion.appendChild(elemento("span", t.asistieron + " asistieron", "t-detalle"));
+      }
+
+      fila.appendChild(accion);
+
+      const m = mensajesTaller[t.id];
+
+      if (m) fila.appendChild(elemento("span", m.texto, "t-mensaje " + m.clase));
+
+      caja.appendChild(fila);
+    });
+
+    return caja;
+  }
+
+
+  function subirListaTaller(evento, taller, boton) {
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".xlsx,.xls,.csv";
+
+    input.addEventListener("change", async function () {
+
+      const archivo = input.files[0];
+
+      if (!archivo) return;
+
+      boton.disabled = true;
+      boton.textContent = "Subiendo…";
+
+      try {
+
+        const lista = await leerArchivoInvitados(archivo, false);
+
+        if (lista.length > taller.cupo) {
+          throw new Error("La lista tiene " + lista.length + " personas y el cupo es de " + taller.cupo + ".");
+        }
+
+        if (taller.inscritos > 0 && !confirm(
+          "¿Reemplazar la lista de \"" + taller.nombre + "\" (" + taller.inscritos +
+          " inscritos) por la nueva (" + lista.length + ")?"
+        )) {
+          return;
+        }
+
+        const resultado = await llamarServidor({
+          accion: "actualizarListaTaller",
+          clave: claveAdmin,
+          idEvento: evento.id,
+          idTaller: taller.id,
+          invitados: lista.map(function (p) { return { nombre: p.nombre, correo: p.correo }; })
+        }, 60000);
+
+        if (!resultado || !resultado.ok) {
+
+          if (resultado && resultado.mensaje === MENSAJE_NO_AUTORIZADO) {
+            cerrarSesion("La sesión terminó. Entra de nuevo.");
+            return;
+          }
+
+          throw new Error((resultado && resultado.mensaje) || "No se pudo subir la lista.");
+        }
+
+        mensajesTaller[taller.id] = { texto: "✓ " + resultado.mensaje, clase: "ok" };
+
+        consultarEventos();
+
+      } catch (error) {
+
+        mensajesTaller[taller.id] = { texto: error.message, clase: "error" };
+        mostrarEventos(ultimosDatos);
+
+      } finally {
+
+        boton.disabled = false;
+        boton.textContent = taller.inscritos > 0 ? "Cambiar lista" : "Subir lista";
+      }
+    });
+
+    input.click();
+  }
+
+
+  let ultimosDatos = null;
+
   function mostrarEventos(datos) {
 
     const lista = $("eventosLista");
@@ -946,6 +1277,8 @@
     if (!datos || datos.ok !== true) {
       return;   // Se conserva lo que ya estaba.
     }
+
+    ultimosDatos = datos;
 
     lista.replaceChildren();
 
@@ -995,10 +1328,279 @@
    * CREAR EVENTO
    * ==========================================
    */
+  /*
+   * ==========================================
+   * TALLERES (formulario)
+   * ==========================================
+   */
+  const MAX_TALLERES_POR_DIA = 5;
+  const MAX_CUPO_TALLER = 5000;
+
+  let numeroTaller = 0;
+
+  function fechaISO(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getDate()).padStart(2, "0");
+  }
+
+  function textoDia(iso) {
+    const d = new Date(iso + "T12:00:00");
+    return DIAS[d.getDay()] + " " + d.getDate() + " " + MESES[d.getMonth()];
+  }
+
+  /** Días del evento ("yyyy-MM-dd") según las fechas elegidas. */
+  function diasDelEvento() {
+
+    const inicio = $("fechaInicio").value;
+    const fin = $("fechaFin").value;
+
+    if (!inicio) return [];
+
+    const limite = new Date((fin && fin >= inicio ? fin : inicio) + "T12:00:00");
+    const dias = [];
+
+    for (let d = new Date(inicio + "T12:00:00"); d <= limite && dias.length < 62; d.setDate(d.getDate() + 1)) {
+      dias.push(fechaISO(d));
+    }
+
+    return dias;
+  }
+
+  function llenarDias(select) {
+
+    const actual = select.value;
+    const dias = diasDelEvento();
+
+    select.replaceChildren();
+
+    if (!dias.length) {
+      select.appendChild(new Option("Elige antes la fecha del evento", ""));
+      select.disabled = true;
+      return;
+    }
+
+    select.disabled = false;
+
+    if (dias.length > 1) select.appendChild(new Option("Elige el día", ""));
+
+    dias.forEach(function (d) { select.appendChild(new Option(textoDia(d), d)); });
+
+    if (dias.indexOf(actual) !== -1) select.value = actual;
+  }
+
+  function bloquesTaller() {
+    return Array.prototype.slice.call(document.querySelectorAll("#talleresLista .taller-bloque"));
+  }
+
+  function actualizarTalleresForm() {
+
+    bloquesTaller().forEach(function (b, i) {
+      b.querySelector(".taller-titulo").textContent = "Taller " + (i + 1);
+      llenarDias(b.querySelector(".taller-dia"));
+    });
+
+    const maximo = MAX_TALLERES_POR_DIA * Math.max(1, diasDelEvento().length);
+    const boton = $("btnAgregarTaller");
+
+    boton.disabled = bloquesTaller().length >= maximo;
+    boton.lastChild.textContent = bloquesTaller().length ? " Agregar otro taller" : " Agregar taller";
+  }
+
+  function agregarTaller() {
+
+    numeroTaller++;
+
+    const n = numeroTaller;
+    const b = elemento("div", null, "taller-bloque");
+
+    b.innerHTML =
+      '<div class="taller-cabeza"><strong class="taller-titulo">Taller</strong>' +
+      '<button type="button" class="btn-quitar">Quitar</button></div>' +
+      '<div class="campo"><label for="tn' + n + '">Nombre del taller</label>' +
+      '<input type="text" id="tn' + n + '" class="taller-nombre" maxlength="80" placeholder="Ej. Taller de fotografía"></div>' +
+      '<div class="fila-4">' +
+      '<div class="campo campo-dia"><label for="td' + n + '">Día</label><select id="td' + n + '" class="taller-dia"></select></div>' +
+      '<div class="campo"><label for="ti' + n + '">Inicio</label><input type="time" id="ti' + n + '" class="taller-inicio"></div>' +
+      '<div class="campo"><label for="tf' + n + '">Fin</label><input type="time" id="tf' + n + '" class="taller-fin"></div>' +
+      '<div class="campo"><label for="tc' + n + '">Cupo</label><input type="number" id="tc' + n + '" class="taller-cupo" min="1" max="' + MAX_CUPO_TALLER + '" inputmode="numeric"></div>' +
+      '</div>' +
+      '<div class="taller-archivo">' +
+      '<button type="button" class="btn-mini taller-elegir">Subir lista de inscritos</button>' +
+      '<span class="archivo-estado taller-estado">Sin lista por ahora (puedes subirla después).</span>' +
+      '</div>';
+
+    b.inscritos = null;
+
+    b.querySelector(".btn-quitar").addEventListener("click", function () {
+      b.remove();
+      actualizarTalleresForm();
+    });
+
+    b.querySelector(".taller-elegir").addEventListener("click", function () {
+
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".xlsx,.xls,.csv";
+
+      input.addEventListener("change", async function () {
+
+        const archivo = input.files[0];
+        const estado = b.querySelector(".taller-estado");
+
+        if (!archivo) return;
+
+        estado.className = "archivo-estado taller-estado";
+        estado.textContent = "Revisando…";
+
+        try {
+
+          const lista = await leerArchivoInvitados(archivo, false);
+
+          if (!lista.length) throw new Error("El archivo no tiene personas.");
+
+          b.inscritos = lista;
+          estado.className = "archivo-estado taller-estado ok";
+          estado.textContent = "✓ " + lista.length + " inscritos (" + archivo.name + ")";
+          b.querySelector(".taller-elegir").textContent = "Cambiar lista";
+
+        } catch (error) {
+
+          b.inscritos = null;
+          estado.className = "archivo-estado taller-estado error";
+          estado.textContent = error.message;
+        }
+      });
+
+      input.click();
+    });
+
+    $("talleresLista").appendChild(b);
+
+    actualizarTalleresForm();
+
+    b.querySelector(".taller-nombre").focus();
+  }
+
+  function minutos(hhmm) {
+    const p = hhmm.split(":").map(Number);
+    return p[0] * 60 + p[1];
+  }
+
+  /**
+   * Revisa los talleres del formulario contra la lista general.
+   * Devuelve la lista para el servidor o lanza un error claro.
+   */
+  function reunirTalleres(invitados, horaInicio, horaFin) {
+
+    const generales = {};
+
+    invitados.forEach(function (p) { generales[p.correo] = true; });
+
+    const porDia = {};
+    const nombres = {};
+    const personaDia = {};
+
+    const cruza = minutos(horaFin) <= minutos(horaInicio);
+
+    return bloquesTaller().map(function (b, i) {
+
+      const etiqueta = "Taller " + (i + 1);
+      const nombre = b.querySelector(".taller-nombre").value.trim();
+      const fecha = b.querySelector(".taller-dia").value;
+      const inicio = b.querySelector(".taller-inicio").value;
+      const fin = b.querySelector(".taller-fin").value;
+      const cupo = Number(b.querySelector(".taller-cupo").value);
+
+      if (!nombre) throw new Error(etiqueta + ": escribe el nombre.");
+
+      const quien = "\"" + nombre + "\"";
+
+      if (nombres[nombre.toLowerCase()]) throw new Error("Hay dos talleres llamados " + quien + ". Usa nombres distintos.");
+      nombres[nombre.toLowerCase()] = true;
+
+      if (!fecha) throw new Error(quien + ": elige el día.");
+      if (!inicio || !fin) throw new Error(quien + ": escribe la hora de inicio y de fin.");
+      if (minutos(fin) <= minutos(inicio)) throw new Error(quien + ": la hora de fin debe ser después de la de inicio.");
+
+      if (!cruza && (minutos(inicio) < minutos(horaInicio) || minutos(fin) > minutos(horaFin))) {
+        throw new Error(quien + ": debe ser dentro del horario del evento (" + horaInicio + " a " + horaFin + ").");
+      }
+
+      if (cruza && minutos(inicio) < minutos(horaInicio)) {
+        throw new Error(quien + ": debe empezar después de la hora de inicio del evento (" + horaInicio + ").");
+      }
+
+      if (!Number.isInteger(cupo) || cupo < 1 || cupo > MAX_CUPO_TALLER) {
+        throw new Error(quien + ": escribe un cupo entre 1 y " + MAX_CUPO_TALLER + ".");
+      }
+
+      porDia[fecha] = (porDia[fecha] || 0) + 1;
+
+      if (porDia[fecha] > MAX_TALLERES_POR_DIA) {
+        throw new Error("El " + textoDia(fecha) + " tiene más de " + MAX_TALLERES_POR_DIA + " talleres (máximo " + MAX_TALLERES_POR_DIA + " por día).");
+      }
+
+      let lista = [];
+
+      if (b.inscritos) {
+
+        const fuera = b.inscritos.conFila.filter(function (p) { return !generales[p.correo]; });
+
+        if (fuera.length) {
+          throw new Error(
+            quien + ": " + fuera.length + " persona(s) de su lista no están en la lista de invitados:\n" +
+            fuera.slice(0, 8).map(function (p) { return "fila " + p.fila + ": " + p.correo; }).join("\n") +
+            (fuera.length > 8 ? "\n…" : "") +
+            "\nRevisa que el correo sea el mismo en las dos listas."
+          );
+        }
+
+        const vistos = {};
+
+        lista = b.inscritos.filter(function (p) {
+          if (vistos[p.correo]) return false;
+          vistos[p.correo] = true;
+          return true;
+        });
+
+        if (lista.length > cupo) {
+          throw new Error(quien + ": tiene " + lista.length + " inscritos y el cupo es de " + cupo + ".");
+        }
+
+        lista.forEach(function (p) {
+
+          const clave = fecha + "|" + p.correo;
+
+          if (personaDia[clave]) {
+            throw new Error(
+              p.correo + " está en " + personaDia[clave] + " y en " + quien +
+              ", el mismo día. Solo se permite un taller por día."
+            );
+          }
+
+          personaDia[clave] = quien;
+        });
+      }
+
+      return {
+        nombre: nombre,
+        fecha: fecha,
+        horaInicio: inicio,
+        horaFin: fin,
+        cupo: cupo,
+        invitados: lista.map(function (p) { return { nombre: p.nombre, correo: p.correo }; })
+      };
+    });
+  }
+
+
   function limpiarFormulario() {
 
     ["nombreEvento", "fechaInicio", "fechaFin", "horaInicio", "horaFin", "archivoInvitados"]
       .forEach(function (id) { $(id).value = ""; });
+
+    $("talleresLista").replaceChildren();
+    actualizarTalleresForm();
 
     $("zonaTexto").textContent = "Elige el archivo de Excel o CSV";
     $("archivoEstado").textContent = "";
@@ -1036,9 +1638,14 @@
         throw new Error("El archivo no tiene invitados.");
       }
 
+      const talleres = reunirTalleres(invitados, horaInicio, horaFin);
+      const sinLista = talleres.filter(function (t) { return !t.invitados.length; }).length;
+
       const confirmar = confirm(
-        "¿Crear \"" + nombre + "\" con " + invitados.length + " invitados?\n\n" +
-        "Se registrarán el evento y la lista de invitados."
+        "¿Crear \"" + nombre + "\" con " + invitados.length + " invitados" +
+        (talleres.length ? " y " + talleres.length + (talleres.length === 1 ? " taller" : " talleres") : "") + "?\n\n" +
+        "Se registrarán el evento y la lista de invitados." +
+        (sinLista ? "\n" + sinLista + " taller(es) sin lista de inscritos: podrás subirla después." : "")
       );
 
       if (!confirmar) return;
@@ -1058,7 +1665,8 @@
         fechaFin: fechaFin,
         horaInicio: horaInicio,
         horaFin: horaFin,
-        invitados: invitados
+        invitados: invitados,
+        talleres: talleres
       });
 
       if (!resultado.ok) {
@@ -1071,8 +1679,11 @@
       }
 
       mostrarEstado(
-        "\"" + (resultado.nombre || nombre) + "\" se creó con " + resultado.invitados +
-        " invitados.\nYa puedes cerrar esta página: los códigos QR se generan solos.",
+        (resultado.mensaje || ("\"" + (resultado.nombre || nombre) + "\" se creó.")) +
+        (resultado.claveCheckin
+          ? "\nCódigo de check-in: " + resultado.claveCheckin + " (también te llegó por correo)."
+          : "") +
+        "\nYa puedes cerrar esta página: los códigos QR se generan solos.",
         "ok"
       );
 
@@ -1195,6 +1806,7 @@
     const lista = resultado.map(function (i) { return { nombre: i.nombre, correo: i.correo }; });
 
     lista.repetidos = contarRepetidos(resultado).length;
+    lista.conFila = resultado;
 
     return lista;
   }
@@ -1301,6 +1913,9 @@
   $("btnActualizar").addEventListener("click", consultarEventos);
   $("btnCrear").addEventListener("click", crearEvento);
   $("archivoInvitados").addEventListener("change", revisarArchivoElegido);
+  $("btnAgregarTaller").addEventListener("click", agregarTaller);
+  $("fechaInicio").addEventListener("change", actualizarTalleresForm);
+  $("fechaFin").addEventListener("change", actualizarTalleresForm);
 
   // Arrastrar y soltar el archivo.
   const zona = $("zonaArchivo");
