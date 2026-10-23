@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#16697a">
-  <title>Acceso al evento</title>
+  <title>Check-in</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -230,6 +230,116 @@
       outline-offset: 2px;
     }
 
+    /* ---------- Modo de escaneo (entrada general / talleres) ---------- */
+
+    :root { --modo: var(--sello); --modo-claro: #e6f0f1; }
+
+    body.modo-taller { --modo: #6b4fa0; --modo-claro: #efeaf7; }
+
+    .modos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 2px 0 10px;
+    }
+
+    .modos[hidden] { display: none; }
+
+    .modos[hidden] { display: none; }
+
+    .modo-btn {
+      flex: 1 1 auto;
+      min-width: 40%;
+      padding: 10px 14px;
+      border: 2px solid var(--linea);
+      border-radius: 12px;
+      background: var(--blanco);
+      color: var(--tinta);
+      font: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+      line-height: 1.2;
+    }
+
+    .modo-btn small {
+      display: block;
+      font-weight: 400;
+      font-size: 13px;
+      color: var(--tinta-suave);
+    }
+
+    .modo-btn[aria-pressed="true"] {
+      background: var(--modo);
+      border-color: var(--modo);
+      color: #fff;
+    }
+
+    .modo-btn[aria-pressed="true"] small { color: rgba(255, 255, 255, .85); }
+
+    .modo-actual {
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      background: var(--modo);
+      color: #fff;
+      font-weight: 700;
+      font-size: 17px;
+    }
+
+    .modo-actual span { font-weight: 400; font-size: 14px; opacity: .9; }
+
+    #reader { outline: 5px solid var(--modo); outline-offset: -5px; }
+
+    .aviso-modo {
+      display: none;
+      margin-bottom: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--ambar-claro);
+      color: #8a5a12;
+      font-size: 14px;
+    }
+
+    .aviso-modo.visible { display: block; }
+
+    /* ---------- Elegir evento (contraseña maestra) ---------- */
+
+    .lista-eventos { display: grid; gap: 8px; margin-top: 4px; }
+
+    .lista-eventos button {
+      background: var(--blanco) !important;
+      color: var(--tinta) !important;
+      border: 2px solid var(--linea) !important;
+      text-align: left;
+      font-size: 16px !important;
+    }
+
+    .lista-eventos button:hover { border-color: var(--sello) !important; }
+
+    .btn-texto {
+      background: none !important;
+      color: var(--sello) !important;
+      padding: 10px !important;
+      font-size: 15px !important;
+    }
+
+    .campo-clave { position: relative; }
+
+    .campo-clave input { padding-right: 86px; }
+
+    .btn-ver {
+      position: absolute;
+      right: 6px;
+      top: 6px;
+      width: auto !important;
+      padding: 8px 10px !important;
+      background: none !important;
+      color: var(--sello) !important;
+      font-size: 14px !important;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .resultado.procesando .resultado-icono,
       .resultado.nuevo { animation: none; }
@@ -242,13 +352,27 @@
   <!-- ACCESO -->
   <div id="pantallaAcceso" class="pantalla-acceso">
     <div class="acceso">
-      <h2>Acceso al evento</h2>
-      <p>Entra con la contraseña de check-in.</p>
 
-      <label for="claveCheckinInput">Contraseña</label>
-      <input type="password" id="claveCheckinInput" autocomplete="current-password">
+      <div id="pasoClave">
+        <h2>Check-in</h2>
+        <p>Escribe el código de check-in de tu evento.</p>
 
-      <button id="btnAcceder">Entrar</button>
+        <label for="claveCheckinInput">Código de acceso</label>
+        <div class="campo-clave">
+          <input type="password" id="claveCheckinInput" autocomplete="off"
+                 autocapitalize="characters" spellcheck="false" placeholder="Ej. K7P2-QX9M">
+          <button type="button" id="btnVer" class="btn-ver" aria-pressed="false">Mostrar</button>
+        </div>
+
+        <button id="btnAcceder">Entrar</button>
+      </div>
+
+      <div id="pasoEvento" hidden>
+        <h2>Elige el evento</h2>
+        <p>Eventos con check-in abierto ahora.</p>
+        <div id="listaEventos" class="lista-eventos"></div>
+        <button type="button" id="btnVolver" class="btn-texto">Volver</button>
+      </div>
 
       <div id="mensajeAcceso" role="alert"></div>
     </div>
@@ -259,11 +383,17 @@
 
     <div class="barra-superior">
       <div>
-        <h1>Acceso al evento</h1>
+        <h1 id="nombreEvento">Check-in</h1>
         <div id="estado">Esperando acceso…</div>
       </div>
       <button id="btnSalir" class="btn-salir">Salir</button>
     </div>
+
+    <div id="modos" class="modos" role="group" aria-label="Dónde estás escaneando"></div>
+
+    <div id="avisoModo" class="aviso-modo" role="status"></div>
+
+    <div class="modo-actual" id="modoActual">Entrada general</div>
 
     <div id="reader"></div>
 
@@ -311,12 +441,31 @@
 
   const $ = id => document.getElementById(id);
 
-  let claveCheckin = sessionStorage.getItem("claveCheckin") || "";
+  // Cada cuánto se revisan los talleres activos (aparecen 10 min antes).
+  const REFRESCO_MODOS_MS = 60000;
+
+  let claveCheckin = leerSesion("claveCheckin");
+  let idEventoElegido = leerSesion("idEventoCheckin");   // solo con la contraseña maestra
+  let modos = [];
+  let modoActual = "general";
+  let intervaloModos = null;
   let procesando = false;
   let ultimoCodigo = "";
   let ultimoMomento = 0;
   let lector = null;
   let audio = null;
+
+
+  function leerSesion(clave) {
+    try { return sessionStorage.getItem(clave) || ""; } catch (e) { return ""; }
+  }
+
+  function guardarSesion(clave, valor) {
+    try {
+      if (valor) sessionStorage.setItem(clave, valor);
+      else sessionStorage.removeItem(clave);
+    } catch (e) {}
+  }
 
 
   /*
@@ -456,6 +605,8 @@
    */
   function mostrarLogin(mensaje) {
 
+    $("pasoClave").hidden = false;
+    $("pasoEvento").hidden = true;
     $("claveCheckinInput").value = "";
     $("mensajeAcceso").textContent = mensaje || "";
     $("btnAcceder").disabled = false;
@@ -465,8 +616,13 @@
   }
 
 
-  function verificarClave(clave, callback) {
-    llamarBackend({ accion: "validarCheckin", clave: clave }, callback);
+  function consultarEstado(clave, idEvento, callback) {
+
+    const parametros = { accion: "estadoCheckin", clave: clave };
+
+    if (idEvento) parametros.idEvento = idEvento;
+
+    llamarBackend(parametros, callback);
   }
 
 
@@ -479,7 +635,7 @@
     const clave = input.value.trim();
 
     if (!clave) {
-      mensaje.textContent = "Escribe la contraseña.";
+      mensaje.textContent = "Escribe el código de acceso.";
       return;
     }
 
@@ -493,52 +649,242 @@
       audio = audio || new (window.AudioContext || window.webkitAudioContext)();
     } catch (e) {}
 
-    verificarClave(clave, function (datos) {
+    consultarEstado(clave, "", function (datos) {
 
-      // Solo se entra si el servidor confirma explícitamente.
+      boton.disabled = false;
+      boton.textContent = "Entrar";
+
       if (!datos || datos.ok !== true) {
-
-        boton.disabled = false;
-        boton.textContent = "Entrar";
-
-        mensaje.textContent =
-          datos && datos.mensaje === MENSAJE_NO_AUTORIZADO
-            ? "Contraseña incorrecta."
-            : (datos && datos.mensaje) || "No se pudo verificar el acceso.";
-
+        mensaje.textContent = (datos && datos.mensaje) || "No se pudo verificar el acceso.";
         input.value = "";
         input.focus();
         return;
       }
 
       claveCheckin = clave;
-      sessionStorage.setItem("claveCheckin", clave);
 
-      entrar();
+      // Contraseña maestra: primero se elige el evento.
+      if (datos.maestro && !datos.evento) {
+        mostrarEventosAbiertos(datos.eventos || []);
+        return;
+      }
+
+      guardarSesion("claveCheckin", clave);
+      guardarSesion("idEventoCheckin", "");
+      idEventoElegido = "";
+
+      entrar(datos);
     });
   }
 
 
-  function entrar() {
+  function mostrarEventosAbiertos(eventos) {
+
+    const lista = $("listaEventos");
+
+    lista.replaceChildren();
+
+    $("pasoClave").hidden = true;
+    $("pasoEvento").hidden = false;
+    $("mensajeAcceso").textContent = "";
+
+    if (!eventos.length) {
+      const vacio = document.createElement("p");
+      vacio.textContent = "No hay ningún evento con check-in abierto en este momento.";
+      lista.appendChild(vacio);
+      return;
+    }
+
+    eventos.forEach(function (evento) {
+
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.textContent = evento.nombre;
+
+      boton.addEventListener("click", function () {
+
+        boton.disabled = true;
+
+        consultarEstado(claveCheckin, evento.id, function (datos) {
+
+          boton.disabled = false;
+
+          if (!datos || datos.ok !== true) {
+            $("mensajeAcceso").textContent = (datos && datos.mensaje) || "No se pudo abrir el evento.";
+            return;
+          }
+
+          idEventoElegido = evento.id;
+          guardarSesion("claveCheckin", claveCheckin);
+          guardarSesion("idEventoCheckin", evento.id);
+
+          entrar(datos);
+        });
+      });
+
+      lista.appendChild(boton);
+    });
+  }
+
+
+  function entrar(datos) {
 
     $("pantallaAcceso").style.display = "none";
+    $("nombreEvento").textContent = datos.evento.nombre;
+    document.title = "Check-in · " + datos.evento.nombre;
+
+    modoActual = "general";
+    actualizarModos(datos.modos || []);
 
     mostrarListo();
     iniciarCamara();
+
+    if (!intervaloModos) {
+      intervaloModos = setInterval(refrescarModos, REFRESCO_MODOS_MS);
+    }
   }
 
 
   async function salir(mensaje) {
 
     claveCheckin = "";
-    sessionStorage.removeItem("claveCheckin");
+    idEventoElegido = "";
+    guardarSesion("claveCheckin", "");
+    guardarSesion("idEventoCheckin", "");
+
+    if (intervaloModos) {
+      clearInterval(intervaloModos);
+      intervaloModos = null;
+    }
 
     await detenerCamara();
 
     $("estado").textContent = "Esperando acceso…";
+    $("nombreEvento").textContent = "Check-in";
+    $("modos").replaceChildren();
+    modoActual = "general";
+    pintarModo();
 
     mostrarListo();
     mostrarLogin(mensaje);
+  }
+
+
+  /*
+   * ==========================================
+   * MODOS: ENTRADA GENERAL Y TALLERES
+   * ==========================================
+   */
+  function modoPorId(id) {
+    return modos.find(function (m) { return m.id === id; });
+  }
+
+
+  function actualizarModos(nuevos) {
+
+    modos = nuevos.length ? nuevos : [{ id: "general", nombre: "Entrada general" }];
+
+    // Si el taller elegido ya terminó, se regresa a la entrada general.
+    if (!modoPorId(modoActual)) {
+
+      const anterior = modoActual;
+
+      modoActual = "general";
+
+      if (anterior !== "general") {
+        avisarModo("El taller terminó. Volviste a la entrada general.");
+        mostrarListo();
+        sonar("aviso");
+      }
+    }
+
+    const caja = $("modos");
+
+    caja.replaceChildren();
+
+    // Con un solo modo (sin talleres activos) no hace falta elegir.
+    caja.hidden = modos.length < 2;
+
+    modos.forEach(function (modo) {
+
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "modo-btn";
+      boton.setAttribute("aria-pressed", modo.id === modoActual ? "true" : "false");
+      boton.textContent = modo.nombre;
+
+      if (modo.horario) {
+        const detalle = document.createElement("small");
+        detalle.textContent = "Taller · " + modo.horario;
+        boton.appendChild(detalle);
+      }
+
+      boton.addEventListener("click", function () { elegirModo(modo.id); });
+
+      caja.appendChild(boton);
+    });
+
+    pintarModo();
+  }
+
+
+  function elegirModo(id) {
+
+    if (id === modoActual) return;
+
+    modoActual = id;
+    avisarModo("");
+
+    actualizarModos(modos);
+    mostrarListo();
+
+    ultimoCodigo = "";
+  }
+
+
+  function pintarModo() {
+
+    const modo = modoPorId(modoActual) || { id: "general", nombre: "Entrada general" };
+    const esTaller = modo.id !== "general";
+
+    document.body.classList.toggle("modo-taller", esTaller);
+
+    const barra = $("modoActual");
+
+    barra.textContent = esTaller ? "Taller: " + modo.nombre : "Entrada general";
+
+    if (esTaller && modo.horario) {
+      const horario = document.createElement("span");
+      horario.textContent = " · " + modo.horario;
+      barra.appendChild(horario);
+    }
+  }
+
+
+  function avisarModo(texto) {
+
+    const caja = $("avisoModo");
+
+    caja.textContent = texto;
+    caja.classList.toggle("visible", !!texto);
+  }
+
+
+  function refrescarModos() {
+
+    if (!claveCheckin) return;
+
+    consultarEstado(claveCheckin, idEventoElegido, function (datos) {
+
+      if (!datos || datos.timeout) return;   // Sin red: se intenta en el siguiente minuto.
+
+      if (datos.ok !== true) {
+        salir(datos.mensaje || "El check-in de este evento ya no está disponible.");
+        return;
+      }
+
+      if (datos.evento) actualizarModos(datos.modos || []);
+    });
   }
 
 
@@ -665,13 +1011,27 @@
 
     mostrar("procesando", "Verificando…", "", "Un momento.");
 
+    const parametros = {
+      accion: "checkinEvento",
+      codigoQR: codigo,
+      clave: claveCheckin,
+      modo: modoActual
+    };
+
+    if (idEventoElegido) parametros.idEvento = idEventoElegido;
+
     llamarBackend(
-      { accion: "checkin", codigoQR: codigo, clave: claveCheckin },
+      parametros,
       function (datos) {
 
         ultimoMomento = Date.now();
 
-        if (datos && datos.ok === true) {
+        if (datos && datos.ok === true && datos.tipo === "Taller") {
+
+          mostrar("ok", "Asistencia registrada", datos.nombre || "", "Taller: " + (datos.taller || ""));
+          sonar("ok");
+
+        } else if (datos && datos.ok === true) {
 
           const entrada = datos.tipo !== "Salida";
 
@@ -689,7 +1049,19 @@
           mostrar("aviso", "Ya registrado", datos.nombre || "", datos.mensaje);
           sonar("aviso");
 
-        } else if (datos && datos.mensaje === MENSAJE_NO_AUTORIZADO) {
+        } else if (datos && datos.tallerCerrado) {
+
+          mostrar("aviso", "Taller cerrado", "", datos.mensaje);
+          sonar("aviso");
+          refrescarModos();
+
+        } else if (datos && datos.cerrado) {
+
+          procesando = false;
+          salir(datos.mensaje);
+          return;
+
+        } else if (datos && datos.mensaje === "Código de acceso incorrecto.") {
 
           procesando = false;
           salir("La sesión terminó. Entra de nuevo.");
@@ -712,8 +1084,8 @@
 
           mostrar(
             "error",
-            "No se puede registrar",
-            "",
+            datos && datos.sinEntrada ? "Falta la entrada general" : "No se puede registrar",
+            (datos && datos.nombre) || "",
             (datos && datos.mensaje) || "Ocurrió un error inesperado."
           );
           sonar("error");
@@ -742,27 +1114,36 @@
     salir("");
   });
 
+  $("btnVolver").addEventListener("click", function () { mostrarLogin(""); });
+
+  $("btnVer").addEventListener("click", function () {
+    const input = $("claveCheckinInput");
+    const visible = input.type === "password";
+    input.type = visible ? "text" : "password";
+    this.textContent = visible ? "Ocultar" : "Mostrar";
+    this.setAttribute("aria-pressed", visible ? "true" : "false");
+    input.focus();
+  });
+
   // Si ya había una sesión en esta pestaña, se verifica en silencio.
   if (claveCheckin) {
 
     $("btnAcceder").disabled = true;
     $("btnAcceder").textContent = "Entrando…";
 
-    verificarClave(claveCheckin, function (datos) {
+    consultarEstado(claveCheckin, idEventoElegido, function (datos) {
 
-      if (datos && datos.ok === true) {
-        entrar();
+      if (datos && datos.ok === true && datos.evento) {
+        entrar(datos);
         return;
       }
 
       claveCheckin = "";
-      sessionStorage.removeItem("claveCheckin");
+      idEventoElegido = "";
+      guardarSesion("claveCheckin", "");
+      guardarSesion("idEventoCheckin", "");
 
-      mostrarLogin(
-        datos && datos.mensaje === MENSAJE_NO_AUTORIZADO
-          ? ""
-          : (datos && datos.mensaje) || ""
-      );
+      mostrarLogin((datos && datos.mensaje) || "");
     });
 
   } else {
