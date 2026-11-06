@@ -236,47 +236,36 @@
 
     body.modo-taller { --modo: #6b4fa0; --modo-claro: #efeaf7; }
 
-    .modos {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 2px 0 10px;
+    .modos { padding: 2px 0 10px; }
+
+    .modos[hidden] { display: none; }
+
+    .modos label {
+      display: block;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 6px;
     }
 
-    .modos[hidden] { display: none; }
-
-    .modos[hidden] { display: none; }
-
-    .modo-btn {
-      flex: 1 1 auto;
-      min-width: 40%;
-      padding: 10px 14px;
-      border: 2px solid var(--linea);
+    .modos select {
+      width: 100%;
+      padding: 12px 40px 12px 14px;
+      border: 2px solid var(--modo);
       border-radius: 12px;
-      background: var(--blanco);
+      background: var(--blanco) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%235b6876' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center;
       color: var(--tinta);
       font: inherit;
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 700;
-      text-align: left;
+      appearance: none;
+      -webkit-appearance: none;
       cursor: pointer;
-      line-height: 1.2;
     }
 
-    .modo-btn small {
-      display: block;
-      font-weight: 400;
-      font-size: 13px;
-      color: var(--tinta-suave);
+    select:focus-visible {
+      outline: 3px solid #f2c94c;
+      outline-offset: 2px;
     }
-
-    .modo-btn[aria-pressed="true"] {
-      background: var(--modo);
-      border-color: var(--modo);
-      color: #fff;
-    }
-
-    .modo-btn[aria-pressed="true"] small { color: rgba(255, 255, 255, .85); }
 
     .modo-actual {
       padding: 10px 14px;
@@ -389,7 +378,10 @@
       <button id="btnSalir" class="btn-salir">Salir</button>
     </div>
 
-    <div id="modos" class="modos" role="group" aria-label="Dónde estás escaneando"></div>
+    <div id="modos" class="modos" hidden>
+      <label for="selectorModo">¿Dónde estás registrando?</label>
+      <select id="selectorModo"></select>
+    </div>
 
     <div id="avisoModo" class="aviso-modo" role="status"></div>
 
@@ -761,7 +753,9 @@
 
     $("estado").textContent = "Esperando acceso…";
     $("nombreEvento").textContent = "Check-in";
-    $("modos").replaceChildren();
+    $("modos").hidden = true;
+    $("selectorModo").replaceChildren();
+    $("selectorModo").dataset.firma = "";
     modoActual = "general";
     pintarModo();
 
@@ -799,30 +793,29 @@
     }
 
     const caja = $("modos");
-
-    caja.replaceChildren();
+    const selector = $("selectorModo");
 
     // Con un solo modo (sin talleres activos) no hace falta elegir.
     caja.hidden = modos.length < 2;
 
-    modos.forEach(function (modo) {
+    // Solo se rehace la lista si cambiaron los talleres (así no se
+    // cierra si alguien la tiene abierta al refrescar).
+    const firma = JSON.stringify(modos);
 
-      const boton = document.createElement("button");
-      boton.type = "button";
-      boton.className = "modo-btn";
-      boton.setAttribute("aria-pressed", modo.id === modoActual ? "true" : "false");
-      boton.textContent = modo.nombre;
+    if (selector.dataset.firma !== firma) {
 
-      if (modo.horario) {
-        const detalle = document.createElement("small");
-        detalle.textContent = "Taller · " + modo.horario;
-        boton.appendChild(detalle);
-      }
+      selector.dataset.firma = firma;
+      selector.replaceChildren();
 
-      boton.addEventListener("click", function () { elegirModo(modo.id); });
+      modos.forEach(function (modo) {
+        selector.appendChild(new Option(
+          modo.horario ? "Taller: " + modo.nombre + " (" + modo.horario + ")" : modo.nombre,
+          modo.id
+        ));
+      });
+    }
 
-      caja.appendChild(boton);
-    });
+    selector.value = modoActual;
 
     pintarModo();
   }
@@ -937,22 +930,42 @@
 
       lector = new Html5Qrcode("reader");
 
-      await lector.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          // Video cuadrado y zona de lectura cuadrada.
-          aspectRatio: 1.0,
-          qrbox: function (ancho, alto) {
-            const lado = Math.floor(Math.min(ancho, alto) * 0.7);
-            return { width: lado, height: lado };
-          }
-        },
-        qrDetectado,
-        function () {
-          // No mostramos errores de lectura continuamente.
+      const ajustes = {
+        fps: 10,
+        // Video cuadrado y zona de lectura cuadrada.
+        aspectRatio: 1.0,
+        qrbox: function (ancho, alto) {
+          const lado = Math.floor(Math.min(ancho, alto) * 0.7);
+          return { width: lado, height: lado };
         }
-      );
+      };
+
+      const sinErrores = function () {
+        // No mostramos errores de lectura continuamente.
+      };
+
+      // En el celular se pide la cámara de atrás. Muchas computadoras solo
+      // tienen cámara de frente, y ahí pedir la de atrás falla; en ese caso
+      // se usa la cámara que haya.
+      try {
+
+        await lector.start({ facingMode: "environment" }, ajustes, qrDetectado, sinErrores);
+
+      } catch (sinCamaraTrasera) {
+
+        console.warn("No hay cámara de atrás, se busca otra:", sinCamaraTrasera);
+
+        const camaras = await Html5Qrcode.getCameras();
+
+        if (!camaras || !camaras.length) throw new Error("SIN_CAMARAS");
+
+        // Si hay varias, se prefiere la que parezca ser la de atrás.
+        const atras = camaras.find(function (c) {
+          return /back|rear|trasera|environment/i.test(c.label || "");
+        });
+
+        await lector.start((atras || camaras[0]).id, ajustes, qrDetectado, sinErrores);
+      }
 
       $("estado").textContent = "Cámara lista";
 
@@ -970,7 +983,10 @@
         "",
         error && error.message === "No se pudo cargar el lector de QR."
           ? "No se pudo cargar el lector. Revisa la conexión a internet y recarga la página."
-          : "Revisa que el navegador tenga permiso para usar la cámara y recarga la página."
+          : error && error.message === "SIN_CAMARAS"
+            ? "Este dispositivo no tiene ninguna cámara disponible. Usa un celular o conecta una cámara."
+            : "Revisa que el navegador tenga permiso para usar la cámara y recarga la página. " +
+              "Si otra aplicación está usando la cámara (una videollamada, por ejemplo), ciérrala."
       );
     }
   }
@@ -1115,6 +1131,8 @@
   });
 
   $("btnVolver").addEventListener("click", function () { mostrarLogin(""); });
+
+  $("selectorModo").addEventListener("change", function () { elegirModo(this.value); });
 
   $("btnVer").addEventListener("click", function () {
     const input = $("claveCheckinInput");
