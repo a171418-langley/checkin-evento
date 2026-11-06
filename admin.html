@@ -121,6 +121,7 @@
     }
 
     input[type="text"],
+    input[type="email"],
     input[type="password"],
     input[type="date"],
     input[type="time"] {
@@ -604,6 +605,80 @@
     .t-mensaje.ok { color: var(--verde); }
     .t-mensaje.error { color: var(--ladrillo); white-space: pre-line; }
 
+    /* ---------- Minimizar tarjetas y talleres ---------- */
+
+    .seccion-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .boleto-nombre button {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      padding: 0;
+      border: none;
+      background: none;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+    }
+
+    .flecha {
+      flex: 0 0 auto;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--papel);
+      color: var(--tinta-suave);
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .2s ease;
+    }
+
+    [aria-expanded="true"] > .flecha { transform: rotate(180deg); }
+
+    .boleto.plegado .boleto-detalle,
+    .taller-bloque.plegado .taller-contenido { display: none; }
+
+    .boleto.plegado .boleto-fecha { margin-bottom: 8px; }
+    .boleto.plegado .aviso-evento { margin-top: 0; }
+
+    .taller-cabeza .taller-izq { min-width: 0; }
+    .taller-cabeza .taller-botones { display: flex; gap: 4px; flex: 0 0 auto; }
+
+    .taller-resumen {
+      display: none;
+      font-size: 14px;
+      color: var(--tinta-suave);
+      overflow-wrap: anywhere;
+    }
+
+    .taller-bloque.plegado { padding-bottom: 14px; }
+    .taller-bloque.plegado .taller-cabeza { margin-bottom: 0; }
+    .taller-bloque.plegado .taller-resumen { display: block; }
+
+    .btn-plegar {
+      border: none;
+      background: none;
+      color: var(--sello);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 4px 6px;
+    }
+
+    /* ---------- Correos del cliente ---------- */
+
+    .correo-fila {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .correo-fila input { flex: 1 1 auto; min-width: 0; }
+
     @media (max-width: 560px) {
       .fila-4 { grid-template-columns: 1fr 1fr; }
       .fila-4 .campo-dia { grid-column: 1 / -1; }
@@ -615,7 +690,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .barra span { transition: none; }
+      .barra span, .flecha { transition: none; }
     }
   </style>
 </head>
@@ -654,7 +729,10 @@
 
       <div class="seccion-titulo">
         <h2 id="tituloEventos">Eventos</h2>
-        <button id="btnActualizar" class="btn-borde" type="button">Actualizar</button>
+        <div class="seccion-acciones">
+          <button id="btnPlegarTodos" class="btn-borde" type="button" hidden>Minimizar todos</button>
+          <button id="btnActualizar" class="btn-borde" type="button">Actualizar</button>
+        </div>
       </div>
 
       <div id="resumenEventos" class="resumen"></div>
@@ -750,6 +828,19 @@
           <div id="talleresLista"></div>
           <button id="btnAgregarTaller" class="agregar-taller" type="button">
             <span class="mas" aria-hidden="true">+</span> Agregar taller
+          </button>
+        </div>
+
+        <div class="campo">
+          <div class="etiqueta">Correos del cliente <span class="opcional">(opcional)</span></div>
+          <div class="ayuda" style="margin-top:0">
+            Tú siempre recibes todos los avisos. A estos correos les llegarán: las
+            instrucciones para usar el check-in (al crear el evento), el aviso de que
+            las invitaciones ya se enviaron y el resumen cuando termine el evento.
+          </div>
+          <div id="correosLista"></div>
+          <button id="btnAgregarCorreo" class="agregar-taller" type="button">
+            <span class="mas" aria-hidden="true">+</span> Agregar correo
           </button>
         </div>
 
@@ -1059,17 +1150,74 @@
   }
 
 
-  function tarjetaEvento(evento) {
+  /*
+   * Tarjetas minimizadas. Con un solo evento se ve abierta; con
+   * varios, minimizadas. Lo que elijas se respeta al refrescar.
+   */
+  const tarjetasAbiertas = {};
+
+  function tarjetaAbierta(id, total) {
+    return tarjetasAbiertas[id] !== undefined ? tarjetasAbiertas[id] : total < 2;
+  }
+
+  function pintarTarjeta(boleto, abierta) {
+    boleto.classList.toggle("plegado", !abierta);
+    boleto.querySelector(".boleto-nombre button").setAttribute("aria-expanded", abierta ? "true" : "false");
+  }
+
+  function actualizarBotonPlegarTodos() {
+
+    const tarjetas = document.querySelectorAll("#eventosLista .boleto");
+    const boton = $("btnPlegarTodos");
+
+    boton.hidden = tarjetas.length < 2;
+    boton.textContent = document.querySelector("#eventosLista .boleto:not(.plegado)")
+      ? "Minimizar todos"
+      : "Abrir todos";
+  }
+
+  function plegarTodos() {
+
+    const abrir = !document.querySelector("#eventosLista .boleto:not(.plegado)");
+
+    document.querySelectorAll("#eventosLista .boleto").forEach(function (boleto) {
+      tarjetasAbiertas[boleto.dataset.id] = abrir;
+      pintarTarjeta(boleto, abrir);
+    });
+
+    actualizarBotonPlegarTodos();
+  }
+
+
+  function tarjetaEvento(evento, total) {
 
     const boleto = elemento("article", null, "boleto");
+
+    boleto.dataset.id = evento.id;
 
     // ---------- Cuerpo ----------
     const cuerpo = elemento("div", null, "boleto-cuerpo");
 
-    cuerpo.appendChild(elemento("h3", evento.nombre, "boleto-nombre"));
+    // El nombre es el botón para minimizar o abrir la tarjeta.
+    const titulo = elemento("h3", null, "boleto-nombre");
+    const botonTitulo = elemento("button");
+    botonTitulo.type = "button";
+    botonTitulo.appendChild(elemento("span", evento.nombre));
+    botonTitulo.appendChild(elemento("span", "▾", "flecha"));
+    botonTitulo.lastChild.setAttribute("aria-hidden", "true");
+    titulo.appendChild(botonTitulo);
+
+    botonTitulo.addEventListener("click", function () {
+      const abrir = boleto.classList.contains("plegado");
+      tarjetasAbiertas[evento.id] = abrir;
+      pintarTarjeta(boleto, abrir);
+      actualizarBotonPlegarTodos();
+    });
+
+    cuerpo.appendChild(titulo);
     cuerpo.appendChild(elemento("div", textoFechaEvento(evento), "boleto-fecha"));
 
-    const etapas = elemento("div", null, "etapas");
+    const etapas = elemento("div", null, "etapas boleto-detalle");
 
     // Diseño
     const filaDiseno = elemento("div", null, "etapa");
@@ -1087,6 +1235,7 @@
 
     cuerpo.appendChild(etapas);
 
+    // Lo que le toca al evento se ve siempre, aun minimizada.
     const paso = siguientePaso(evento);
     cuerpo.appendChild(elemento("div", paso.texto, "aviso-evento " + paso.clase));
 
@@ -1113,6 +1262,8 @@
     boleto.appendChild(cuerpo);
     boleto.appendChild(talon);
 
+    pintarTarjeta(boleto, tarjetaAbierta(evento.id, total));
+
     return boleto;
   }
 
@@ -1124,7 +1275,7 @@
    */
   function bloqueClave(evento) {
 
-    const caja = elemento("div", null, "clave-checkin");
+    const caja = elemento("div", null, "clave-checkin boleto-detalle");
 
     caja.appendChild(elemento("span", "Código de check-in"));
     caja.appendChild(elemento("code", evento.claveCheckin));
@@ -1152,7 +1303,7 @@
 
   function bloqueTalleres(evento) {
 
-    const caja = elemento("div", null, "talleres-tarjeta");
+    const caja = elemento("div", null, "talleres-tarjeta boleto-detalle");
 
     caja.appendChild(elemento("h4", "Talleres"));
 
@@ -1299,12 +1450,17 @@
       lista.appendChild(
         elemento("div", "No hay eventos en curso ni próximos. Crea uno abajo.", "vacio")
       );
+      actualizarBotonPlegarTodos();
       return;
     }
 
-    activos.concat(proximos).forEach(function (evento) {
-      lista.appendChild(tarjetaEvento(evento));
+    const ordenados = activos.concat(proximos);
+
+    ordenados.forEach(function (evento) {
+      lista.appendChild(tarjetaEvento(evento, ordenados.length));
     });
+
+    actualizarBotonPlegarTodos();
   }
 
 
@@ -1397,6 +1553,7 @@
     bloquesTaller().forEach(function (b, i) {
       b.querySelector(".taller-titulo").textContent = "Taller " + (i + 1);
       llenarDias(b.querySelector(".taller-dia"));
+      resumirTaller(b);
     });
 
     const maximo = MAX_TALLERES_POR_DIA * Math.max(1, diasDelEvento().length);
@@ -1406,7 +1563,39 @@
     boton.lastChild.textContent = bloquesTaller().length ? " Agregar otro taller" : " Agregar taller";
   }
 
+  /** Una línea con los datos del taller (se ve cuando está minimizado). */
+  function resumirTaller(b) {
+
+    const nombre = b.querySelector(".taller-nombre").value.trim() || "Sin nombre";
+    const dia = b.querySelector(".taller-dia").value;
+    const inicio = b.querySelector(".taller-inicio").value;
+    const fin = b.querySelector(".taller-fin").value;
+    const cupo = b.querySelector(".taller-cupo").value;
+
+    const partes = [nombre];
+
+    if (dia) partes.push(textoDia(dia));
+    if (inicio && fin) partes.push(inicio + "–" + fin);
+    if (cupo) partes.push("cupo " + cupo);
+    partes.push(b.inscritos ? b.inscritos.length + " inscritos" : "sin lista");
+
+    b.querySelector(".taller-resumen").textContent = partes.join(" · ");
+  }
+
+  function plegarTaller(b, plegar) {
+
+    resumirTaller(b);
+    b.classList.toggle("plegado", plegar);
+
+    const boton = b.querySelector(".btn-plegar");
+    boton.textContent = plegar ? "Abrir" : "Minimizar";
+    boton.setAttribute("aria-expanded", plegar ? "false" : "true");
+  }
+
   function agregarTaller() {
+
+    // Los talleres que ya estaban se minimizan para que no ocupen espacio.
+    bloquesTaller().forEach(function (otro) { plegarTaller(otro, true); });
 
     numeroTaller++;
 
@@ -1414,8 +1603,13 @@
     const b = elemento("div", null, "taller-bloque");
 
     b.innerHTML =
-      '<div class="taller-cabeza"><strong class="taller-titulo">Taller</strong>' +
-      '<button type="button" class="btn-quitar">Quitar</button></div>' +
+      '<div class="taller-cabeza">' +
+      '<div class="taller-izq"><strong class="taller-titulo">Taller</strong>' +
+      '<span class="taller-resumen"></span></div>' +
+      '<div class="taller-botones">' +
+      '<button type="button" class="btn-plegar" aria-expanded="true">Minimizar</button>' +
+      '<button type="button" class="btn-quitar">Quitar</button></div></div>' +
+      '<div class="taller-contenido">' +
       '<div class="campo"><label for="tn' + n + '">Nombre del taller</label>' +
       '<input type="text" id="tn' + n + '" class="taller-nombre" maxlength="80" placeholder="Ej. Taller de fotografía"></div>' +
       '<div class="fila-4">' +
@@ -1427,9 +1621,14 @@
       '<div class="taller-archivo">' +
       '<button type="button" class="btn-mini taller-elegir">Subir lista de inscritos</button>' +
       '<span class="archivo-estado taller-estado">Sin lista por ahora (puedes subirla después).</span>' +
+      '</div>' +
       '</div>';
 
     b.inscritos = null;
+
+    b.querySelector(".btn-plegar").addEventListener("click", function () {
+      plegarTaller(b, !b.classList.contains("plegado"));
+    });
 
     b.querySelector(".btn-quitar").addEventListener("click", function () {
       b.remove();
@@ -1503,6 +1702,16 @@
     const cruza = minutos(horaFin) <= minutos(horaInicio);
 
     return bloquesTaller().map(function (b, i) {
+      try {
+        return revisarBloqueTaller(b, i);
+      } catch (error) {
+        // Si el problema es de un taller minimizado, se abre para corregirlo.
+        plegarTaller(b, false);
+        throw error;
+      }
+    });
+
+    function revisarBloqueTaller(b, i) {
 
       const etiqueta = "Taller " + (i + 1);
       const nombre = b.querySelector(".taller-nombre").value.trim();
@@ -1532,6 +1741,13 @@
 
       if (!Number.isInteger(cupo) || cupo < 1 || cupo > MAX_CUPO_TALLER) {
         throw new Error(quien + ": escribe un cupo entre 1 y " + MAX_CUPO_TALLER + ".");
+      }
+
+      if (cupo > invitados.length) {
+        throw new Error(
+          quien + ": el cupo (" + cupo + ") es mayor que el número de invitados (" +
+          invitados.length + "). Pon un cupo de " + invitados.length + " o menos."
+        );
       }
 
       porDia[fecha] = (porDia[fecha] || 0) + 1;
@@ -1590,7 +1806,80 @@
         cupo: cupo,
         invitados: lista.map(function (p) { return { nombre: p.nombre, correo: p.correo }; })
       };
+    }
+  }
+
+
+  /*
+   * ==========================================
+   * CORREOS DEL CLIENTE (formulario)
+   * ==========================================
+   */
+  const MAX_CORREOS_CLIENTE = 5;
+
+  function filasCorreo() {
+    return Array.prototype.slice.call(document.querySelectorAll("#correosLista .correo-fila"));
+  }
+
+  function actualizarCorreosForm() {
+
+    const boton = $("btnAgregarCorreo");
+
+    boton.disabled = filasCorreo().length >= MAX_CORREOS_CLIENTE;
+    boton.lastChild.textContent = filasCorreo().length ? " Agregar otro correo" : " Agregar correo";
+  }
+
+  function agregarCorreo() {
+
+    const fila = elemento("div", null, "correo-fila");
+    const input = document.createElement("input");
+
+    input.type = "email";
+    input.className = "correo-cliente";
+    input.maxLength = 254;
+    input.placeholder = "correo@ejemplo.com";
+    input.setAttribute("aria-label", "Correo del cliente " + (filasCorreo().length + 1));
+
+    const quitar = elemento("button", "Quitar", "btn-quitar");
+    quitar.type = "button";
+    quitar.addEventListener("click", function () {
+      fila.remove();
+      actualizarCorreosForm();
     });
+
+    fila.appendChild(input);
+    fila.appendChild(quitar);
+    $("correosLista").appendChild(fila);
+
+    actualizarCorreosForm();
+    input.focus();
+  }
+
+  /** Correos escritos (válidos y sin repetir) o un error claro. */
+  function reunirCorreos() {
+
+    const vistos = {};
+    const lista = [];
+
+    filasCorreo().forEach(function (fila) {
+
+      const input = fila.querySelector("input");
+      const correo = input.value.trim().toLowerCase();
+
+      if (!correo) return;
+
+      if (!correoValido(correo)) {
+        input.focus();
+        throw new Error("Revisa el correo del cliente: " + correo);
+      }
+
+      if (vistos[correo]) return;
+
+      vistos[correo] = true;
+      lista.push(correo);
+    });
+
+    return lista;
   }
 
 
@@ -1601,6 +1890,9 @@
 
     $("talleresLista").replaceChildren();
     actualizarTalleresForm();
+
+    $("correosLista").replaceChildren();
+    actualizarCorreosForm();
 
     $("zonaTexto").textContent = "Elige el archivo de Excel o CSV";
     $("archivoEstado").textContent = "";
@@ -1640,12 +1932,14 @@
 
       const talleres = reunirTalleres(invitados, horaInicio, horaFin);
       const sinLista = talleres.filter(function (t) { return !t.invitados.length; }).length;
+      const correosCliente = reunirCorreos();
 
       const confirmar = confirm(
         "¿Crear \"" + nombre + "\" con " + invitados.length + " invitados" +
         (talleres.length ? " y " + talleres.length + (talleres.length === 1 ? " taller" : " talleres") : "") + "?\n\n" +
         "Se registrarán el evento y la lista de invitados." +
-        (sinLista ? "\n" + sinLista + " taller(es) sin lista de inscritos: podrás subirla después." : "")
+        (sinLista ? "\n" + sinLista + " taller(es) sin lista de inscritos: podrás subirla después." : "") +
+        (correosCliente.length ? "\nAvisos para el cliente: " + correosCliente.join(", ") : "")
       );
 
       if (!confirmar) return;
@@ -1666,7 +1960,10 @@
         horaInicio: horaInicio,
         horaFin: horaFin,
         invitados: invitados,
-        talleres: talleres
+        talleres: talleres,
+        correosCliente: correosCliente,
+        // Dirección de la página de check-in (va en el aviso al cliente).
+        urlCheckin: new URL("index.html", location.href).href
       });
 
       if (!resultado.ok) {
@@ -1682,6 +1979,9 @@
         (resultado.mensaje || ("\"" + (resultado.nombre || nombre) + "\" se creó.")) +
         (resultado.claveCheckin
           ? "\nCódigo de check-in: " + resultado.claveCheckin + " (también te llegó por correo)."
+          : "") +
+        (resultado.correosCliente
+          ? "\nLas instrucciones del check-in se enviaron a " + resultado.correosCliente + "."
           : "") +
         "\nYa puedes cerrar esta página: los códigos QR se generan solos.",
         "ok"
@@ -1914,6 +2214,8 @@
   $("btnCrear").addEventListener("click", crearEvento);
   $("archivoInvitados").addEventListener("change", revisarArchivoElegido);
   $("btnAgregarTaller").addEventListener("click", agregarTaller);
+  $("btnAgregarCorreo").addEventListener("click", agregarCorreo);
+  $("btnPlegarTodos").addEventListener("click", plegarTodos);
   $("fechaInicio").addEventListener("change", actualizarTalleresForm);
   $("fechaFin").addEventListener("change", actualizarTalleresForm);
 
