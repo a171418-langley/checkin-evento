@@ -605,6 +605,36 @@
     .t-mensaje.ok { color: var(--verde); }
     .t-mensaje.error { color: var(--ladrillo); white-space: pre-line; }
 
+    /* ---------- Acciones del evento ---------- */
+
+    .acciones-evento { margin-top: 14px; border-top: 1px solid #e6eaed; padding-top: 10px; }
+
+    .acciones-evento h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: var(--tinta-suave);
+      font-weight: 700;
+    }
+
+    .acciones-evento h4 + .acciones-fila { margin-bottom: 4px; }
+
+    .acciones-fila { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .acciones-evento .separador { margin-top: 12px; }
+
+    .btn-mini.peligro { color: var(--ladrillo); border-color: #e3c4c2; }
+    .btn-mini.peligro:hover { border-color: var(--ladrillo); }
+
+    .evento-nota { margin-top: 8px; font-size: 13px; color: var(--tinta-suave); }
+
+    .ayuda.error { color: var(--ladrillo); font-weight: 700; }
+
+    .evento-mensaje { margin-top: 8px; font-size: 13px; }
+    .evento-mensaje.ok { color: var(--verde); }
+    .evento-mensaje.error { color: var(--ladrillo); white-space: pre-line; }
+
+    .estado.cancelado { color: var(--ladrillo); }
+
     /* ---------- Minimizar tarjetas y talleres ---------- */
 
     .seccion-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -781,6 +811,33 @@
         </div>
 
         <p class="ayuda" style="margin:-8px 0 14px">El check-in de la entrada se abre 30 minutos antes de la hora de inicio.</p>
+
+        <div class="campo">
+          <label for="envioCuando">¿Cuándo se envían las invitaciones?</label>
+          <select id="envioCuando">
+            <option value="ya">En cuanto estén listas</option>
+            <option value="fecha">El día y la hora que yo elija</option>
+          </select>
+        </div>
+
+        <div class="fila-2" id="envioCampos" hidden>
+          <div class="campo">
+            <label for="envioFecha">Día del envío</label>
+            <input type="date" id="envioFecha">
+          </div>
+          <div class="campo">
+            <label for="envioHora">Hora del envío</label>
+            <input type="time" id="envioHora">
+          </div>
+        </div>
+
+        <p class="ayuda" id="envioAyuda" hidden style="margin:-8px 0 14px">
+          Google deja mandar 1500 correos al día, así que una lista más grande
+          se reparte en varios días. Elige el día con tiempo suficiente antes
+          del evento.
+        </p>
+
+        <p class="ayuda" id="cuotaCorreos" hidden style="margin:-8px 0 14px"></p>
 
         <details class="nota">
           <summary>¿Termina después de medianoche?</summary>
@@ -1097,6 +1154,13 @@
     const inv = evento.estadoInvitaciones;
     const envio = evento.procesoEnvio;
 
+    if (evento.estado === "Cancelado") {
+      return {
+        texto: "Evento cancelado. Sus datos siguen guardados; puedes eliminarlo cuando quieras.",
+        clase: "problema"
+      };
+    }
+
     if (inv === "Completo") {
       return { texto: "Invitaciones enviadas.", clase: "ok" };
     }
@@ -1130,6 +1194,15 @@
     if (inv === "En proceso") return { texto: "Enviando invitaciones…", clase: "" };
     if (inv === "En cola") return { texto: "En espera: se enviará al terminar otro evento.", clase: "" };
     if (inv === "Pausado") return { texto: "Envío pausado.", clase: "atencion" };
+
+    if (inv === "Programado") {
+      return {
+        texto: evento.envioProgramado
+          ? "Las invitaciones se envían el " + evento.envioProgramado + "."
+          : "El envío está programado.",
+        clase: "atencion"
+      };
+    }
 
     if (inv === "Listo para enviar") {
       return {
@@ -1239,8 +1312,13 @@
     const paso = siguientePaso(evento);
     cuerpo.appendChild(elemento("div", paso.texto, "aviso-evento " + paso.clase));
 
-    if (evento.claveCheckin) cuerpo.appendChild(bloqueClave(evento));
+    if (evento.claveCheckin && evento.estado !== "Cancelado") {
+      cuerpo.appendChild(bloqueClave(evento));
+    }
+
     if (evento.talleres && evento.talleres.length) cuerpo.appendChild(bloqueTalleres(evento));
+
+    cuerpo.appendChild(bloqueAcciones(evento));
 
     // ---------- Talón ----------
     const talon = elemento("div", null, "boleto-talon");
@@ -1251,13 +1329,17 @@
       talon.appendChild(elemento("div", MESES[fecha.getMonth()], "talon-mes"));
     }
 
-    talon.appendChild(
-      elemento(
-        "span",
-        evento.estado === "Activo" ? "En curso" : "Próximo",
-        "estado" + (evento.estado === "Activo" ? " activo" : "")
-      )
-    );
+    const textoEstado =
+      evento.estado === "Activo"
+        ? "En curso"
+        : evento.estado === "Cancelado" ? "Cancelado" : "Próximo";
+
+    const claseEstado =
+      evento.estado === "Activo"
+        ? " activo"
+        : evento.estado === "Cancelado" ? " cancelado" : "";
+
+    talon.appendChild(elemento("span", textoEstado, "estado" + claseEstado));
 
     boleto.appendChild(cuerpo);
     boleto.appendChild(talon);
@@ -1265,6 +1347,380 @@
     pintarTarjeta(boleto, tarjetaAbierta(evento.id, total));
 
     return boleto;
+  }
+
+
+  /*
+   * ==========================================
+   * ACCIONES DEL EVENTO (en la tarjeta)
+   * ==========================================
+   */
+
+  // Mensajes de las acciones, para que sobrevivan al refresco.
+  const mensajesEvento = {};
+
+  /** En qué va el recordatorio del día anterior. */
+  function textoRecordatorio(evento) {
+
+    if (evento.recordatorio === "Completo") {
+      return "Recordatorio del día anterior: ya se envió.";
+    }
+
+    if (evento.recordatorio === "En proceso") {
+      return "Recordatorio del día anterior: enviándose.";
+    }
+
+    if (evento.recordatorio === "No aplica") {
+      return "Sin recordatorio: las invitaciones salieron menos de 4 días antes " +
+        "del evento.";
+    }
+
+    return "";
+  }
+
+
+  /** "12/11/2026 09:00" → "2026-11-12 09:00" (para el recuadro). */
+  function aISO(texto) {
+
+    const m = String(texto || "").match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}:\d{2})$/);
+
+    return m ? m[3] + "-" + m[2] + "-" + m[1] + " " + m[4] : "";
+  }
+
+  function botonEvento(texto, clase, alPulsar) {
+
+    const boton = elemento("button", texto, clase);
+    boton.type = "button";
+
+    boton.addEventListener("click", function () {
+      alPulsar(boton, texto);
+    });
+
+    return boton;
+  }
+
+
+  /**
+   * Manda la acción al servidor y deja el resultado en la tarjeta.
+   */
+  async function accionDeEvento(evento, cuerpo, boton, texto) {
+
+    boton.disabled = true;
+    boton.textContent = "Un momento…";
+
+    try {
+
+      const resultado = await llamarServidor(
+        Object.assign({ clave: claveAdmin, idEvento: evento.id }, cuerpo),
+        180000
+      );
+
+      if (resultado && resultado.mensaje === MENSAJE_NO_AUTORIZADO) {
+        cerrarSesion("La sesión terminó. Entra de nuevo.");
+        return;
+      }
+
+      if (!resultado || !resultado.ok) {
+        throw new Error((resultado && resultado.mensaje) || "No se pudo hacer.");
+      }
+
+      mensajesEvento[evento.id] = { texto: "✓ " + resultado.mensaje, clase: "ok" };
+
+      consultarEventos();
+
+    } catch (error) {
+
+      mensajesEvento[evento.id] = { texto: error.message, clase: "error" };
+      mostrarEventos(ultimosDatos);
+
+    } finally {
+
+      boton.disabled = false;
+      boton.textContent = texto;
+    }
+  }
+
+
+  /**
+   * Sube otra hoja de Excel o CSV con invitados que llegaron tarde.
+   */
+  function agregarInvitados(evento, boton, texto) {
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".xlsx,.xls,.csv";
+
+    input.addEventListener("change", async function () {
+
+      const archivo = input.files[0];
+
+      if (!archivo) return;
+
+      boton.disabled = true;
+      boton.textContent = "Leyendo…";
+
+      try {
+
+        const lista = await leerArchivoInvitados(archivo, true);
+
+        if (lista.length === 0) {
+          throw new Error("Ese archivo no tiene invitados.");
+        }
+
+        boton.textContent = texto;
+
+        const aviso = evento.envioProgramado
+          ? "Su invitación saldrá el " + evento.envioProgramado + ", junto con todas."
+          : "Se les mandará su invitación a ellos solos, en unos minutos.";
+
+        if (!confirm(
+          "¿Agregar " + lista.length +
+          (lista.length === 1 ? " invitado" : " invitados") + " a \"" +
+          evento.nombre + "\"?\n\n" + aviso +
+          "\nA quien ya está en la lista no se le manda nada otra vez."
+        )) {
+          boton.disabled = false;
+          return;
+        }
+
+        await accionDeEvento(
+          evento,
+          {
+            accion: "agregarInvitados",
+            invitados: lista.map(function (p) {
+              return { nombre: p.nombre, correo: p.correo };
+            })
+          },
+          boton, texto
+        );
+
+      } catch (error) {
+
+        mensajesEvento[evento.id] = { texto: error.message, clase: "error" };
+        mostrarEventos(ultimosDatos);
+
+        boton.disabled = false;
+        boton.textContent = texto;
+      }
+    });
+
+    input.click();
+  }
+
+
+  function bloqueAcciones(evento) {
+
+    const caja = elemento("div", null, "acciones-evento boleto-detalle");
+
+    if (evento.estado !== "Cancelado") {
+
+      const fila = elemento("div", null, "acciones-fila");
+      const inv = evento.estadoInvitaciones;
+      const faltan = evento.invitados - evento.enviados;
+
+      if (evento.tieneDiseno) {
+
+        fila.appendChild(botonEvento("Enviar prueba", "btn-mini", function (b, t) {
+
+          if (!confirm(
+            "Se genera la invitación de la persona con el nombre más largo de \"" +
+            evento.nombre + "\" y se manda SOLO a tu correo, para ver cómo queda. " +
+            "No se le manda nada a los invitados.\n\n¿Continuar?"
+          )) return;
+
+          accionDeEvento(evento, { accion: "accionEnvio", que: "prueba" }, b, t);
+        }));
+      }
+
+      if (evento.tieneDiseno && evento.qrListos > 0) {
+
+        fila.appendChild(botonEvento("Reenviar a una persona", "btn-mini", function (b, t) {
+
+          const correo = prompt(
+            "Correo de la persona a la que se le reenvía su invitación.\n\n" +
+            "Su código QR es el mismo de antes, así que el que ya tenía sigue sirviendo."
+          );
+
+          if (correo === null || !correo.trim()) return;
+
+          accionDeEvento(
+            evento,
+            { accion: "accionEnvio", que: "reenviar", correo: correo.trim() },
+            b, t
+          );
+        }));
+      }
+
+      if (inv === "Listo para enviar" || inv === "Programado") {
+
+        fila.appendChild(botonEvento("Iniciar el envío ahora", "btn-mini", function (b, t) {
+
+          if (!confirm(
+            "Se empiezan a enviar las " + evento.invitados + " invitaciones de \"" +
+            evento.nombre + "\".\n\n¿Continuar?"
+          )) return;
+
+          accionDeEvento(evento, { accion: "accionEnvio", que: "iniciar" }, b, t);
+        }));
+      }
+
+      if (inv === "En proceso" || inv === "En cola") {
+
+        fila.appendChild(botonEvento("Pausar el envío", "btn-mini", function (b, t) {
+
+          if (!confirm(
+            "Se detiene el envío de \"" + evento.nombre + "\". Lo que ya se envió no " +
+            "se repite y puedes reanudarlo cuando quieras.\n\n¿Continuar?"
+          )) return;
+
+          accionDeEvento(evento, { accion: "accionEnvio", que: "pausar" }, b, t);
+        }));
+      }
+
+      if (inv === "Pausado") {
+
+        fila.appendChild(botonEvento("Reanudar el envío", "btn-mini", function (b, t) {
+          accionDeEvento(evento, { accion: "accionEnvio", que: "reanudar" }, b, t);
+        }));
+      }
+
+      if (inv === "" || inv === "Programado" || inv === "Listo para enviar") {
+
+        const texto = evento.envioProgramado
+          ? "Cambiar el día del envío"
+          : "Programar el día del envío";
+
+        fila.appendChild(botonEvento(texto, "btn-mini", function (b, t) {
+
+          const escrito = prompt(
+            "¿Qué día y a qué hora se envían las invitaciones de \"" +
+            evento.nombre + "\"?\n\n" +
+            "Escríbelo así: 2026-11-12 09:00 (año-mes-día y la hora).\n" +
+            "Déjalo vacío para que salgan en cuanto estén listas.",
+            aISO(evento.envioProgramado)
+          );
+
+          if (escrito === null) return;
+
+          accionDeEvento(
+            evento,
+            { accion: "programarEnvio", envio: escrito.trim() },
+            b, t
+          );
+        }));
+      }
+
+      if (faltan > 0 && (inv === "Completo" || inv === "Con errores" || inv === "Error")) {
+
+        fila.appendChild(botonEvento(
+          "Reintentar a los que faltaron (" + faltan + ")",
+          "btn-mini",
+          function (b, t) {
+
+            if (!confirm(
+              "Se vuelve a intentar el envío a las " + faltan + " personas que todavía " +
+              "no recibieron su invitación. A quien ya la recibió no se le manda otra " +
+              "vez.\n\n¿Continuar?"
+            )) return;
+
+            accionDeEvento(evento, { accion: "accionEnvio", que: "reintentar" }, b, t);
+          }
+        ));
+      }
+
+      if (fila.childElementCount > 0) {
+        caja.appendChild(elemento("h4", "Invitaciones"));
+        caja.appendChild(fila);
+      }
+
+      const nota = textoRecordatorio(evento);
+
+      if (nota) caja.appendChild(elemento("div", nota, "evento-nota"));
+    }
+
+    // ---------- Invitados ----------
+
+    if (evento.estado !== "Cancelado") {
+
+      caja.appendChild(elemento("h4", "Invitados", "separador"));
+
+      const filaInvitados = elemento("div", null, "acciones-fila");
+
+      filaInvitados.appendChild(
+        botonEvento("Agregar más invitados", "btn-mini", function (b, t) {
+          agregarInvitados(evento, b, t);
+        })
+      );
+
+      caja.appendChild(filaInvitados);
+
+      caja.appendChild(elemento(
+        "div",
+        evento.envioProgramado
+          ? "Se les genera su QR y su invitación sale el día del envío, junto " +
+            "con todos. Ese mismo día ya no se pueden agregar."
+          : "Se les genera su QR y les sale su invitación a ellos solos. A quien " +
+            "ya la recibió no se le manda otra vez.",
+        "evento-nota"
+      ));
+    }
+
+    // ---------- Cancelar y eliminar ----------
+
+    caja.appendChild(elemento("h4", "El evento", "separador"));
+
+    const filaEvento = elemento("div", null, "acciones-fila");
+
+    if (evento.estado !== "Cancelado") {
+
+      filaEvento.appendChild(botonEvento("Cancelar evento", "btn-mini peligro", function (b, t) {
+
+        if (!confirm(
+          "¿Cancelar \"" + evento.nombre + "\"?\n\n" +
+          "Se detiene el envío de invitaciones, el código de check-in deja de servir " +
+          "y no se crea reporte final. Todos los datos se quedan guardados.\n\n" +
+          "Esto no manda ningún correo a los invitados."
+        )) return;
+
+        accionDeEvento(evento, { accion: "cancelarEvento" }, b, t);
+      }));
+    }
+
+    filaEvento.appendChild(botonEvento("Eliminar evento", "btn-mini peligro", function (b, t) {
+
+      const escrito = prompt(
+        "ESTO NO SE PUEDE DESHACER.\n\n" +
+        "Se borra todo lo de \"" + evento.nombre + "\": sus " + evento.invitados +
+        " invitados, las entradas registradas, sus talleres y sus archivos de Drive. " +
+        "El espacio queda limpio para el siguiente evento.\n\n" +
+        "Para confirmar, escribe el nombre del evento tal cual:"
+      );
+
+      if (escrito === null) return;
+
+      if (escrito.trim().toLowerCase() !== String(evento.nombre).trim().toLowerCase()) {
+
+        mensajesEvento[evento.id] = {
+          texto: "El nombre no coincide: no se borró nada.",
+          clase: "error"
+        };
+
+        mostrarEventos(ultimosDatos);
+        return;
+      }
+
+      accionDeEvento(evento, { accion: "eliminarEvento", confirmar: true }, b, t);
+    }));
+
+    caja.appendChild(filaEvento);
+
+    const mensaje = mensajesEvento[evento.id];
+
+    if (mensaje) {
+      caja.appendChild(elemento("div", mensaje.texto, "evento-mensaje " + mensaje.clase));
+    }
+
+    return caja;
   }
 
 
@@ -1421,6 +1877,30 @@
 
   let ultimosDatos = null;
 
+  // Correos que Google todavía deja mandar hoy con la cuenta del
+  // sistema (lo manda el servidor junto con la lista de eventos).
+  let cuotaRestante = null;
+
+  function pintarCuota() {
+
+    const caja = $("cuotaCorreos");
+
+    if (cuotaRestante === null || cuotaRestante < 0) {
+      caja.hidden = true;
+      return;
+    }
+
+    caja.hidden = false;
+
+    caja.textContent =
+      "Hoy puedes mandar " + cuotaRestante + " correos más con esta cuenta " +
+      "(de " + CORREOS_POR_DIA + " al día; se reinicia cada día). Si no " +
+      "alcanzan, lo que falte sale al día siguiente.";
+
+    caja.className = cuotaRestante < 50 ? "ayuda error" : "ayuda";
+  }
+
+
   function mostrarEventos(datos) {
 
     const lista = $("eventosLista");
@@ -1431,20 +1911,34 @@
 
     ultimosDatos = datos;
 
+    if (typeof datos.cuotaCorreos === "number") {
+      cuotaRestante = datos.cuotaCorreos;
+      pintarCuota();
+    }
+
     lista.replaceChildren();
 
     const eventos = datos.eventos || [];
 
     const activos = eventos.filter(function (e) { return e.estado === "Activo"; });
     const proximos = eventos.filter(function (e) { return e.estado === "Programado"; });
+    const cancelados = eventos.filter(function (e) { return e.estado === "Cancelado"; });
 
     const partes = [];
 
     if (activos.length) partes.push(activos.length + (activos.length === 1 ? " en curso" : " en curso"));
     partes.push(proximos.length + (proximos.length === 1 ? " próximo" : " próximos"));
+    if (cancelados.length) {
+      partes.push(cancelados.length + (cancelados.length === 1 ? " cancelado" : " cancelados"));
+    }
+
+    const resumen =
+      partes.length > 1
+        ? partes.slice(0, -1).join(", ") + " y " + partes[partes.length - 1]
+        : partes[0];
 
     $("resumenEventos").textContent =
-      partes.join(" y ") + ". Máximo " + (datos.maximo || 3) + " eventos al mismo tiempo.";
+      resumen + ". Máximo " + (datos.maximo || 3) + " eventos al mismo tiempo.";
 
     if (eventos.length === 0) {
       lista.appendChild(
@@ -1454,7 +1948,7 @@
       return;
     }
 
-    const ordenados = activos.concat(proximos);
+    const ordenados = activos.concat(proximos, cancelados);
 
     ordenados.forEach(function (evento) {
       lista.appendChild(tarjetaEvento(evento, ordenados.length));
@@ -1491,6 +1985,21 @@
    */
   const MAX_TALLERES_POR_DIA = 5;
   const MAX_CUPO_TALLER = 5000;
+
+  // Correos que Google deja mandar al día con la cuenta dueña del
+  // sistema (Workspace: 1500; Gmail normal: 100). Si lo cambias
+  // aquí, cámbialo también en Programado.gs.
+  const CORREOS_POR_DIA = 1500;
+
+
+  /** Muestra u oculta el día y la hora del envío. */
+  function actualizarCamposEnvio() {
+
+    const conFecha = $("envioCuando").value === "fecha";
+
+    $("envioCampos").hidden = !conFecha;
+    $("envioAyuda").hidden = !conFecha;
+  }
 
   let numeroTaller = 0;
 
@@ -1885,8 +2394,12 @@
 
   function limpiarFormulario() {
 
-    ["nombreEvento", "fechaInicio", "fechaFin", "horaInicio", "horaFin", "archivoInvitados"]
+    ["nombreEvento", "fechaInicio", "fechaFin", "horaInicio", "horaFin",
+     "archivoInvitados", "envioFecha", "envioHora"]
       .forEach(function (id) { $(id).value = ""; });
+
+    $("envioCuando").value = "ya";
+    actualizarCamposEnvio();
 
     $("talleresLista").replaceChildren();
     actualizarTalleresForm();
@@ -1914,6 +2427,19 @@
       return;
     }
 
+    // Día y hora del envío (opcional).
+    let envioProgramado = "";
+
+    if ($("envioCuando").value === "fecha") {
+
+      if (!$("envioFecha").value || !$("envioHora").value) {
+        mostrarEstado("Elige el día y la hora del envío de las invitaciones.", "error");
+        return;
+      }
+
+      envioProgramado = $("envioFecha").value + " " + $("envioHora").value;
+    }
+
     if (!archivo) {
       mostrarEstado("Elige el archivo con la lista de invitados.", "error");
       return;
@@ -1934,12 +2460,39 @@
       const sinLista = talleres.filter(function (t) { return !t.invitados.length; }).length;
       const correosCliente = reunirCorreos();
 
+      // Aviso del límite de correos al día.
+      const dias = Math.max(1, Math.ceil(invitados.length / CORREOS_POR_DIA));
+
+      let avisoEnvio = "";
+
+      if (envioProgramado) {
+
+        avisoEnvio = "\nLas invitaciones se envían el " + envioProgramado + ".";
+
+        if (dias > 1) {
+          avisoEnvio += "\nOJO: son " + invitados.length + " invitados y Google deja " +
+            CORREOS_POR_DIA + " correos al día, así que el envío tarda " + dias +
+            " días en terminar.";
+        }
+
+      } else if (dias > 1) {
+
+        avisoEnvio = "\nOJO: son " + invitados.length + " invitados y Google deja " +
+          CORREOS_POR_DIA + " correos al día, así que el envío tarda " + dias + " días.";
+      }
+
+      if (cuotaRestante !== null && cuotaRestante >= 0 && invitados.length > cuotaRestante) {
+        avisoEnvio += "\nHoy solo quedan " + cuotaRestante + " correos disponibles " +
+          "con esta cuenta, así que las demás invitaciones saldrán al día siguiente.";
+      }
+
       const confirmar = confirm(
         "¿Crear \"" + nombre + "\" con " + invitados.length + " invitados" +
         (talleres.length ? " y " + talleres.length + (talleres.length === 1 ? " taller" : " talleres") : "") + "?\n\n" +
         "Se registrarán el evento y la lista de invitados." +
         (sinLista ? "\n" + sinLista + " taller(es) sin lista de inscritos: podrás subirla después." : "") +
-        (correosCliente.length ? "\nAvisos para el cliente: " + correosCliente.join(", ") : "")
+        (correosCliente.length ? "\nAvisos para el cliente: " + correosCliente.join(", ") : "") +
+        avisoEnvio
       );
 
       if (!confirmar) return;
@@ -1962,6 +2515,7 @@
         invitados: invitados,
         talleres: talleres,
         correosCliente: correosCliente,
+        envioProgramado: envioProgramado,
         // Dirección de la página de check-in (va en el aviso al cliente).
         urlCheckin: new URL("index.html", location.href).href
       });
@@ -1982,6 +2536,9 @@
           : "") +
         (resultado.correosCliente
           ? "\nLas instrucciones del check-in se enviaron a " + resultado.correosCliente + "."
+          : "") +
+        (resultado.envioProgramado
+          ? "\nLas invitaciones se enviarán el " + resultado.envioProgramado + "."
           : "") +
         "\nYa puedes cerrar esta página: los códigos QR se generan solos.",
         "ok"
@@ -2212,6 +2769,7 @@
   $("btnSalir").addEventListener("click", function () { cerrarSesion(""); });
   $("btnActualizar").addEventListener("click", consultarEventos);
   $("btnCrear").addEventListener("click", crearEvento);
+  $("envioCuando").addEventListener("change", actualizarCamposEnvio);
   $("archivoInvitados").addEventListener("change", revisarArchivoElegido);
   $("btnAgregarTaller").addEventListener("click", agregarTaller);
   $("btnAgregarCorreo").addEventListener("click", agregarCorreo);
