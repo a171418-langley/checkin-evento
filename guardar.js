@@ -189,7 +189,7 @@
     }
 
     const disponibles = (datos.eventos || []).filter(function (evento) {
-      return !evento.tieneDiseno;
+      return !evento.tieneDiseno && evento.estado !== "Cancelado";
     });
 
     selector.replaceChildren();
