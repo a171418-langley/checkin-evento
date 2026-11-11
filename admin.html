@@ -1688,26 +1688,13 @@
 
     filaEvento.appendChild(botonEvento("Eliminar evento", "btn-mini peligro", function (b, t) {
 
-      const escrito = prompt(
+      if (!confirm(
         "ESTO NO SE PUEDE DESHACER.\n\n" +
         "Se borra todo lo de \"" + evento.nombre + "\": sus " + evento.invitados +
         " invitados, las entradas registradas, sus talleres y sus archivos de Drive. " +
         "El espacio queda limpio para el siguiente evento.\n\n" +
-        "Para confirmar, escribe el nombre del evento tal cual:"
-      );
-
-      if (escrito === null) return;
-
-      if (escrito.trim().toLowerCase() !== String(evento.nombre).trim().toLowerCase()) {
-
-        mensajesEvento[evento.id] = {
-          texto: "El nombre no coincide: no se borró nada.",
-          clase: "error"
-        };
-
-        mostrarEventos(ultimosDatos);
-        return;
-      }
+        "¿Eliminar \"" + evento.nombre + "\"?"
+      )) return;
 
       accionDeEvento(evento, { accion: "eliminarEvento", confirmar: true }, b, t);
     }));
@@ -2324,7 +2311,7 @@
    * CORREOS DEL CLIENTE (formulario)
    * ==========================================
    */
-  const MAX_CORREOS_CLIENTE = 5;
+  // Sin tope de correos del cliente (antes eran 5).
 
   function filasCorreo() {
     return Array.prototype.slice.call(document.querySelectorAll("#correosLista .correo-fila"));
@@ -2334,7 +2321,7 @@
 
     const boton = $("btnAgregarCorreo");
 
-    boton.disabled = filasCorreo().length >= MAX_CORREOS_CLIENTE;
+    boton.disabled = false;
     boton.lastChild.textContent = filasCorreo().length ? " Agregar otro correo" : " Agregar correo";
   }
 
