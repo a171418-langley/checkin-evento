@@ -901,6 +901,28 @@
           </button>
         </div>
 
+        <details class="nota">
+          <summary>Personalizar el correo de la invitación (opcional)</summary>
+          <div class="campo" style="margin-top:10px">
+            <label for="remitenteInvitacion">Nombre del remitente</label>
+            <input type="text" id="remitenteInvitacion" maxlength="80"
+              placeholder="Ej. Bodas de María y Juan">
+            <div class="ayuda" style="margin-top:4px">
+              Es el nombre que verá el invitado como quien envía. Si lo dejas vacío,
+              se usa el de siempre. (El correo desde el que se manda no cambia.)
+            </div>
+          </div>
+          <div class="campo">
+            <label for="asuntoInvitacion">Asunto del correo</label>
+            <input type="text" id="asuntoInvitacion" maxlength="200"
+              placeholder='Ej. Tu invitación a {evento}'>
+            <div class="ayuda" style="margin-top:4px">
+              Puedes usar {evento} (lo cambia por el nombre del evento) y {nombre}
+              (por el del invitado). Si lo dejas vacío, se usa el de siempre.
+            </div>
+          </div>
+        </details>
+
         <button id="btnCrear" class="btn btn-bloque" type="button">Crear evento</button>
 
         <div id="estado" class="mensaje" role="status"></div>
@@ -1925,7 +1947,10 @@
         : partes[0];
 
     $("resumenEventos").textContent =
-      resumen + ". Máximo " + (datos.maximo || 3) + " eventos al mismo tiempo.";
+      resumen +
+      (datos.maximo && datos.maximo > 0
+        ? ". Máximo " + datos.maximo + " eventos al mismo tiempo."
+        : ".");
 
     if (eventos.length === 0) {
       lista.appendChild(
@@ -2382,7 +2407,8 @@
   function limpiarFormulario() {
 
     ["nombreEvento", "fechaInicio", "fechaFin", "horaInicio", "horaFin",
-     "archivoInvitados", "envioFecha", "envioHora"]
+     "archivoInvitados", "envioFecha", "envioHora",
+     "asuntoInvitacion", "remitenteInvitacion"]
       .forEach(function (id) { $(id).value = ""; });
 
     $("envioCuando").value = "ya";
@@ -2503,6 +2529,8 @@
         talleres: talleres,
         correosCliente: correosCliente,
         envioProgramado: envioProgramado,
+        asuntoInvitacion: $("asuntoInvitacion").value.trim(),
+        remitenteInvitacion: $("remitenteInvitacion").value.trim(),
         // Dirección de la página de check-in (va en el aviso al cliente).
         urlCheckin: new URL("index.html", location.href).href
       });
