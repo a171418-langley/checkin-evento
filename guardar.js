@@ -241,6 +241,7 @@
 
     const btn = $("btnGuardar");
 
+    const gratis = !!window.__modoGratis;
     const archivo = $("archivo").files[0];
     const clave = $("claveAdmin").value.trim();
     const selector = $("selectorEvento");
@@ -251,26 +252,35 @@
       return;
     }
 
-    if (!archivo || !imagen) {
-      avisar("msgGuardar", "Primero sube la imagen en el paso 2.", "error");
+    if (!imagen) {
+      avisar("msgGuardar", "Primero elige un diseño en el paso 2.", "error");
       return;
     }
 
-    if (archivo.size > MAX_BYTES) {
-      avisar("msgGuardar", "La imagen pesa más de 5 MB. Pídele al diseñador una versión más ligera.", "error");
-      return;
-    }
+    // Solo el diseño propio sube un archivo; el boleto estándar ya viene incluido.
+    if (!gratis) {
 
-    const esperada = DISENO_ANCHO / DISENO_ALTO;
-    const real = imagen.naturalWidth / imagen.naturalHeight;
+      if (!archivo) {
+        avisar("msgGuardar", "Primero sube la imagen en el paso 2.", "error");
+        return;
+      }
 
-    if (Math.abs(real - esperada) / esperada > 0.02) {
-      avisar(
-        "msgGuardar",
-        "La imagen debe medir " + DISENO_ANCHO + " × " + DISENO_ALTO + " px.",
-        "error"
-      );
-      return;
+      if (archivo.size > MAX_BYTES) {
+        avisar("msgGuardar", "La imagen pesa más de 5 MB. Pídele al diseñador una versión más ligera.", "error");
+        return;
+      }
+
+      const esperada = DISENO_ANCHO / DISENO_ALTO;
+      const real = imagen.naturalWidth / imagen.naturalHeight;
+
+      if (Math.abs(real - esperada) / esperada > 0.02) {
+        avisar(
+          "msgGuardar",
+          "La imagen debe medir " + DISENO_ANCHO + " × " + DISENO_ALTO + " px.",
+          "error"
+        );
+        return;
+      }
     }
 
     const nombreEvento = selector.options[selector.selectedIndex].text;
@@ -285,7 +295,7 @@
 
     try {
 
-      const pngBase64 = await leerComoBase64(archivo);
+      const pngBase64 = gratis ? window.__boletoGratisB64 : await leerComoBase64(archivo);
 
       const datos = await llamarServidor(
         {
