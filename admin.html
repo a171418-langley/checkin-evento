@@ -784,6 +784,13 @@
       <div class="panel">
 
         <div class="campo">
+          <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-weight:400">
+            <input type="checkbox" id="eventoGratis" style="width:20px;height:20px;margin-top:2px;flex:0 0 auto">
+            <span><strong>Evento gratis</strong> &mdash; boleto estándar automático, de 15 a 100 invitados, sin talleres, recordatorio, reporte final ni personalización del correo.</span>
+          </label>
+        </div>
+
+        <div class="campo">
           <label for="nombreEvento">Nombre del evento</label>
           <input type="text" id="nombreEvento" placeholder="Ej. Ceremonia de graduación 2026" maxlength="120">
         </div>
@@ -875,7 +882,7 @@
           </details>
         </div>
 
-        <div class="campo">
+        <div class="campo" id="campoTalleres">
           <div class="etiqueta">Talleres <span class="opcional">(opcional)</span></div>
           <div class="ayuda" style="margin-top:0">
             Máximo 5 por día y una persona solo puede estar en un taller por día.
@@ -888,7 +895,7 @@
           </button>
         </div>
 
-        <div class="campo">
+        <div class="campo" id="campoCorreos">
           <div class="etiqueta">Correos del cliente <span class="opcional">(opcional)</span></div>
           <div class="ayuda" style="margin-top:0">
             Tú siempre recibes todos los avisos. A estos correos les llegarán: las
@@ -901,7 +908,7 @@
           </button>
         </div>
 
-        <details class="nota">
+        <details class="nota" id="detallesPersonalizar">
           <summary>Personalizar el correo de la invitación (opcional)</summary>
           <div class="campo" style="margin-top:10px">
             <label for="remitenteInvitacion">Nombre del remitente</label>
@@ -2414,6 +2421,9 @@
     $("envioCuando").value = "ya";
     actualizarCamposEnvio();
 
+    $("eventoGratis").checked = false;
+    aplicarModoGratis();
+
     $("talleresLista").replaceChildren();
     actualizarTalleresForm();
 
@@ -2469,9 +2479,15 @@
         throw new Error("El archivo no tiene invitados.");
       }
 
-      const talleres = reunirTalleres(invitados, horaInicio, horaFin);
+      // GRATIS: entre 15 y 100 invitados.
+      const gratis = $("eventoGratis").checked;
+      if (gratis && (invitados.length < 15 || invitados.length > 100)) {
+        throw new Error("Un evento gratis necesita entre 15 y 100 invitados. Tu lista tiene " + invitados.length + ".");
+      }
+
+      const talleres = gratis ? [] : reunirTalleres(invitados, horaInicio, horaFin);
       const sinLista = talleres.filter(function (t) { return !t.invitados.length; }).length;
-      const correosCliente = reunirCorreos();
+      const correosCliente = gratis ? [] : reunirCorreos();
 
       // Aviso del límite de correos al día.
       const dias = Math.max(1, Math.ceil(invitados.length / CORREOS_POR_DIA));
@@ -2529,8 +2545,9 @@
         talleres: talleres,
         correosCliente: correosCliente,
         envioProgramado: envioProgramado,
-        asuntoInvitacion: $("asuntoInvitacion").value.trim(),
-        remitenteInvitacion: $("remitenteInvitacion").value.trim(),
+        gratis: gratis,
+        asuntoInvitacion: gratis ? "" : $("asuntoInvitacion").value.trim(),
+        remitenteInvitacion: gratis ? "" : $("remitenteInvitacion").value.trim(),
         // Dirección de la página de check-in (va en el aviso al cliente).
         urlCheckin: new URL("index.html", location.href).href
       });
@@ -2775,6 +2792,15 @@
    * EVENTOS DE LA PÁGINA
    * ==========================================
    */
+  // GRATIS: oculta las partes que un evento gratis no usa.
+  function aplicarModoGratis() {
+    var gratis = $("eventoGratis").checked;
+    ["campoTalleres", "campoCorreos", "detallesPersonalizar"].forEach(function (id) {
+      var el = $(id);
+      if (el) el.style.display = gratis ? "none" : "";
+    });
+  }
+
   $("btnAcceder").addEventListener("click", iniciarSesion);
 
   $("claveAdminInput").addEventListener("keydown", function (evento) {
@@ -2784,6 +2810,8 @@
   $("btnSalir").addEventListener("click", function () { cerrarSesion(""); });
   $("btnActualizar").addEventListener("click", consultarEventos);
   $("btnCrear").addEventListener("click", crearEvento);
+  $("eventoGratis").addEventListener("change", aplicarModoGratis);
+  aplicarModoGratis();
   $("envioCuando").addEventListener("change", actualizarCamposEnvio);
   $("archivoInvitados").addEventListener("change", revisarArchivoElegido);
   $("btnAgregarTaller").addEventListener("click", agregarTaller);
